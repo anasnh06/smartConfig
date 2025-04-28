@@ -1,46 +1,60 @@
 from datetime import datetime
-from typing import Optional
-
-from sqlalchemy import ForeignKey, String, Text, DateTime, func
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import Column, ForeignKey, String, Text, DateTime, Integer, func
+from sqlalchemy.orm import relationship
 
 from app.db import Base
-from .user import User
-from .role import Role
-from .configuration import Configuration
-from .os import OperatingSystem
-from .associations import template_configuration, template_operating_system
+from .associations import template_operating_system
 
 class Template(Base):
     __tablename__ = "templates"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(100), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # Champs simples
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), nullable=False)
+    description = Column(Text, nullable=True)
 
     # Foreign Keys
-    role_id: Mapped[Optional[int]] = mapped_column(ForeignKey("roles.id"), nullable=True)
-    created_by: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
-    updated_by: Mapped[Optional[int]] = mapped_column(ForeignKey("users.id"), nullable=True)
+    role_id = Column(Integer, ForeignKey("roles.id"), nullable=True)
 
-    # Timestamps
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), onupdate=func.now())
+    # Meta utilisateur
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    updated_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
 
-    # Relations
-    role: Mapped[Optional["Role"]] = relationship("Role", back_populates="templates")
-
-    configurations: Mapped[list["Configuration"]] = relationship(
-        "Configuration",
-        secondary=template_configuration,
-        back_populates="templates"
+    created_by_user = relationship(
+        "User",
+        foreign_keys=[created_by],
+        back_populates="templates_created"
+    )
+    updated_by_user = relationship(
+        "User",
+        foreign_keys=[updated_by],
+        back_populates="templates_updated"
     )
 
-    operating_systems: Mapped[list["OperatingSystem"]] = relationship(
+    # Relations métier
+    role = relationship(
+        "Role",
+        foreign_keys=[role_id],
+        back_populates="templates"
+    )
+    operating_systems = relationship(
         "OperatingSystem",
         secondary=template_operating_system,
         back_populates="templates"
     )
 
-    created_by_user: Mapped[Optional["User"]] = relationship("User", foreign_keys=[created_by])
-    updated_by_user: Mapped[Optional["User"]] = relationship("User", foreign_keys=[updated_by])
+    
+    template_configurations= relationship(
+        "TemplateConfiguration",
+        back_populates="template",
+        cascade="all, delete-orphan"
+    )
+
+    
+    template_servers = relationship(
+        "ServerTemplate",
+        back_populates="template",
+        cascade="all, delete-orphan"
+    )

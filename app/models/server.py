@@ -1,17 +1,15 @@
 import os
 from datetime import datetime
-from typing import Optional
-
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, func
 from sqlalchemy.orm import relationship
 
 from app.db import Base
-from app.models.associations import server_role, server_template, server_configuration
-
+from .associations import server_role
 
 class Server(Base):
     __tablename__ = "servers"
 
+    # Champs simples
     id = Column(Integer, primary_key=True)
     name = Column(String(100), unique=True, nullable=False)
     ip_address = Column(String(100), nullable=False)
@@ -23,26 +21,62 @@ class Server(Base):
         nullable=False
     )
 
-    # Foreign keys (meta)
-    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
-    updated_by = Column(Integer, ForeignKey("users.id"), nullable=True)
-
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-
-    # Foreign keys (main)
+    # Foreign Keys métier
     operating_system_id = Column(Integer, ForeignKey("operating_systems.id"), nullable=False)
     environment_id = Column(Integer, ForeignKey("environments.id"), nullable=False)
     project_id = Column(Integer, ForeignKey("projects.id"), nullable=False)
 
-    # Relationships (back_populates est utilisé pour les accès bidirectionnels)
-    operating_system = relationship("OperatingSystem", back_populates="servers")
-    environment = relationship("Environment", back_populates="servers")
-    project = relationship("Project", back_populates="servers")
+    # Meta utilisateur
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    updated_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
 
-    created_by_user = relationship("User", foreign_keys=[created_by], back_populates="servers_created")
-    updated_by_user = relationship("User", foreign_keys=[updated_by], back_populates="servers_updated")
+    # Relations utilisateur
+    created_by_user = relationship(
+        "User",
+        foreign_keys=[created_by],
+        back_populates="servers_created"
+    )
+    updated_by_user = relationship(
+        "User",
+        foreign_keys=[updated_by],
+        back_populates="servers_updated"
+    )
 
-    roles = relationship("Role", secondary=server_role, back_populates="servers")
-    templates = relationship("Template", secondary=server_template, back_populates="servers")
-    configurations = relationship("Configuration", secondary=server_configuration, back_populates="servers")
+    # Relations métier avec foreign_keys explicites
+    operating_system = relationship(
+        "OperatingSystem",
+        foreign_keys=[operating_system_id],
+        back_populates="servers"
+    )
+
+    environment = relationship(
+        "Environment",
+        foreign_keys=[environment_id],
+        back_populates="servers"
+    )
+
+    project = relationship(
+        "Project",
+        foreign_keys=[project_id],
+        back_populates="servers"
+    )
+
+    roles = relationship(
+        "Role",
+        secondary=server_role,
+        back_populates="servers"
+    )
+
+    
+    server_configurations= relationship(
+        "ServerConfiguration",
+        back_populates="server",
+        cascade="all, delete-orphan"
+    )
+    server_templates = relationship(
+        "ServerTemplate",
+        back_populates="server",
+        cascade="all, delete-orphan"
+    )
