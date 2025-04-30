@@ -6,9 +6,13 @@ from sqlalchemy.orm import Session
 from app.core import settings
 from app.db import get_db
 from app.models import User
-from app.services import get_user_by_email, ensure_user_is_active, get_user_by_username
+from app.services import AuthService, UserService
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+
+# ✅ Injecter le AuthService
+def get_auth_service(db: Session = Depends(get_db)) -> AuthService:
+    return AuthService(db)
 
 # ✅ Obtenir l’utilisateur actuel via le token JWT
 def get_current_user(
@@ -35,14 +39,14 @@ def get_current_user(
     except JWTError:
         raise credentials_exception
 
-    user = get_user_by_username(db, username)
+    user = UserService(db).get_by_username(username)
     if not user:
         raise credentials_exception
 
-    ensure_user_is_active(user)
+    AuthService(db).ensure_user_is_active(user)
     return user
 
-# ✅ Vérifier que l’utilisateur est actif
+# ✅ Vérifie que l’utilisateur est actif
 def get_active_user(current_user: User = Depends(get_current_user)) -> User:
-    ensure_user_is_active(current_user)
+    AuthService(None).ensure_user_is_active(current_user)
     return current_user

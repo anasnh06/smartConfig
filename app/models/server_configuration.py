@@ -28,7 +28,7 @@ class ServerConfiguration(Base):
 
     # Relations principales
     execution_group = relationship("ExecutionGroup", back_populates="server_configurations")
-    server          = relationship("Server", back_populates="server_configuration", foreign_keys=[server_id])
+    server          = relationship("Server", back_populates="server_configurations", foreign_keys=[server_id])
     configuration   = relationship("Configuration", back_populates="configuration_servers", foreign_keys=[configuration_id])
     server_template = relationship("ServerTemplate", back_populates="server_configurations", foreign_keys=[server_template_id])
 

@@ -1,34 +1,44 @@
-from datetime import datetime, timedelta
-from jose import jwt
-from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
+from datetime import timedelta
 from typing import Optional
 
-from app.core import settings
+from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
+
 from app.models import User
-from app.services import get_user_by_username, verify_password
+from app.core import settings, create_access_token, verify_password, get_password_hash
 
-# ✅ Authentifier un utilisateur
-def authenticate_user(db: Session, username: str, password: str) -> Optional[User]:
-    user = get_user_by_username(db, username)
-    if not user or not verify_password(password, user.hashed_password):
-        return None
-    return user
+from app.services import UserService
 
-# ✅ Générer un token JWT
-def create_access_token(
-    data: dict,
-    expires_delta: timedelta = timedelta(minutes=settings.access_token_expire_minutes),
-) -> str:
-    to_encode = data.copy()
-    expire = datetime.utcnow() + expires_delta
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
 
-# ✅ Vérifier si un utilisateur est actif
-def ensure_user_is_active(user: User):
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Utilisateur inactif. Veuillez contacter l'administrateur.",
-        )
+class AuthService:
+    def __init__(self, db: Session):
+        self.db = db
+        self.user_service = UserService(db)
+
+    # 🔐 Vérifie les identifiants de l’utilisateur
+    def authenticate_user(self, username: str, password: str) -> Optional[User]:
+        user = self.user_service.get_by_username(username)
+        if not user or not verify_password(password, user.hashed_password):
+            return None
+        return user
+
+    # 🔑 Génère un access token JWT pour un utilisateur
+    def generate_token(self, user: User) -> str:
+        data = {"sub": user.username}
+        expires = timedelta(minutes=settings.access_token_expire_minutes)
+        return create_access_token(data, expires_delta=expires)
+
+    # ✅ Vérifie si l’utilisateur est actif
+    def ensure_user_is_active(self, user: User):
+        if not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Utilisateur inactif. Veuillez contacter l'administrateur.",
+            )
+
+    # (optionnel) 🔁 Changer le mot de passe de l'utilisateur
+    def change_password(self, user: User, new_password: str) -> User:
+        user.hashed_password = get_password_hash(new_password)
+        self.db.commit()
+        self.db.refresh(user)
+        return user
