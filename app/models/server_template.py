@@ -10,7 +10,7 @@ class ServerTemplate(Base):
     # Champs simples
     id = Column(Integer, primary_key=True)
     context = Column(String(255), nullable=True)
-    status = Column(String(50), nullable=True)
+    status = Column(String(20), default="pending")          # pending / running / success / failed / partial
 
     # Foreign Keys métier
     server_id = Column(Integer, ForeignKey("servers.id", ondelete="CASCADE"), nullable=False)
@@ -45,4 +45,9 @@ class ServerTemplate(Base):
         "Template",
         foreign_keys=[template_id],
         back_populates="template_servers"
+    )
+
+    server_configurations = relationship(
+        "ServerConfiguration",
+        back_populates="server_template"
     )

@@ -49,7 +49,8 @@ class Template(Base):
     template_configurations= relationship(
         "TemplateConfiguration",
         back_populates="template",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+        order_by="TemplateConfiguration.order"
     )
 
     

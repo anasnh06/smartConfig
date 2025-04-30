@@ -9,5 +9,7 @@ from .template import Template
 from .server_configuration import ServerConfiguration
 from .server_template import ServerTemplate
 from .template_configuration import TemplateConfiguration
+from .execution_group import ExecutionGroup
+from .execution import Execution
 
-__all__ = ["User", "Configuration", "Environment", "OperatingSystem", "Project", "Role", "Server", "Template", "ServerConfiguration", "ServerTemplate", "TemplateConfiguration"]
+__all__ = ["User", "Configuration", "Environment", "OperatingSystem", "Project", "Role", "Server", "Template", "ServerConfiguration", "ServerTemplate", "TemplateConfiguration", "Execution", "ExecutionGroup"]

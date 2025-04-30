@@ -53,3 +53,5 @@ class User(Base):
 
     servers_configurations_created = relationship("ServerConfiguration", back_populates="created_by_user", foreign_keys="ServerConfiguration.created_by")
     servers_configurations_updated = relationship("ServerConfiguration", back_populates="updated_by_user", foreign_keys="ServerConfiguration.updated_by")
+
+    executions_created  = relationship("Execution", back_populates="created_by_user", foreign_keys="Execution.created_by")
