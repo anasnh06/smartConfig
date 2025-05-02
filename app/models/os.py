@@ -10,7 +10,7 @@ class OperatingSystem(Base):
 
     # Champs simples
     id = Column(Integer, primary_key=True)
-    name = Column(String(100), nullable=False, unique=True, index=True)  # e.g., Ubuntu
+    name = Column(String(100), nullable=False)  # e.g., Ubuntu
     version = Column(String(50), nullable=True)  # e.g., 20.04
 
     # ForeignKeys (aucune autre que User ici)

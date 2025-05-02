@@ -36,3 +36,5 @@ class UserPublic(UserBase):
     created_by: Optional[int] = None
     updated_by: Optional[int] = None
 
+    class Config:
+        from_attributes = True

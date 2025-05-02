@@ -1,8 +1,8 @@
-"""full initial schema
+"""Initial schema clean
 
-Revision ID: 35499c2e3f96
+Revision ID: dbaa52c714fc
 Revises: 
-Create Date: 2025-04-30 09:15:24.096121
+Create Date: 2025-05-02 11:20:46.962301
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '35499c2e3f96'
+revision: str = 'dbaa52c714fc'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -86,7 +86,6 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['updated_by'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_operating_systems_name'), 'operating_systems', ['name'], unique=True)
     op.create_table('projects',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=100), nullable=False),
@@ -256,7 +255,6 @@ def downgrade() -> None:
     op.drop_table('configuration_operating_system')
     op.drop_table('roles')
     op.drop_table('projects')
-    op.drop_index(op.f('ix_operating_systems_name'), table_name='operating_systems')
     op.drop_table('operating_systems')
     op.drop_table('executions')
     op.drop_table('environments')
