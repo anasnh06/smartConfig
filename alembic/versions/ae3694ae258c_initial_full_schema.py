@@ -1,8 +1,8 @@
-"""Initial schema clean
+"""initial full schema
 
-Revision ID: dbaa52c714fc
+Revision ID: ae3694ae258c
 Revises: 
-Create Date: 2025-05-02 11:20:46.962301
+Create Date: 2025-05-07 16:29:34.470416
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'dbaa52c714fc'
+revision: str = 'ae3694ae258c'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -70,8 +70,11 @@ def upgrade() -> None:
     sa.Column('started_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('finished_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('created_by', sa.Integer(), nullable=True),
+    sa.Column('updated_by', sa.Integer(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
     sa.ForeignKeyConstraint(['created_by'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['updated_by'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('operating_systems',
@@ -128,7 +131,13 @@ def upgrade() -> None:
     sa.Column('inventory_path', sa.String(length=255), nullable=True),
     sa.Column('started_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('finished_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('created_by', sa.Integer(), nullable=True),
+    sa.Column('updated_by', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['created_by'], ['users.id'], ),
     sa.ForeignKeyConstraint(['execution_id'], ['executions.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['updated_by'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('servers',

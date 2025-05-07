@@ -78,5 +78,5 @@ class Server(Base):
     server_templates = relationship(
         "ServerTemplate",
         back_populates="server",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan"    
     )

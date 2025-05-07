@@ -15,14 +15,13 @@ class Execution(Base):
     finished_at = Column(DateTime(timezone=True))
 
     # Audit utilisateur
-    created_by  = Column(ForeignKey("users.id"), nullable=True)
-    created_at  = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    created_by = Column(ForeignKey("users.id"), nullable=True)
+    updated_by = Column(ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    created_by_user = relationship(
-        "User",
-        foreign_keys=[created_by],
-        back_populates="executions_created"
-    )
+    created_by_user = relationship("User", foreign_keys=[created_by], back_populates="executions_created")
+    updated_by_user = relationship("User", foreign_keys=[updated_by], back_populates="executions_updated")
 
     # Relations
     execution_groups = relationship(

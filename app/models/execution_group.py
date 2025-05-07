@@ -15,6 +15,14 @@ class ExecutionGroup(Base):
     started_at     = Column(DateTime(timezone=True))
     finished_at    = Column(DateTime(timezone=True))
 
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    created_by = Column(ForeignKey("users.id"), nullable=True)
+    updated_by = Column(ForeignKey("users.id"), nullable=True)
+
+    created_by_user = relationship("User", foreign_keys=[created_by], back_populates="execution_groups_created")
+    updated_by_user = relationship("User", foreign_keys=[updated_by], back_populates="execution_groups_updated")
+
     execution = relationship(
         "Execution",
         foreign_keys=[execution_id],
