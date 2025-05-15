@@ -1,7 +1,7 @@
 from typing import Optional, List
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
-from app.models import Role
+from app.models import Role, User
 from app.schemas import RoleCreate, RoleUpdate
 
 
@@ -9,8 +9,16 @@ class RoleService:
     def __init__(self, db: Session):
         self.db = db
 
-    def get_by_id(self, role_id: int) -> Optional[Role]:
-        return self.db.query(Role).filter(Role.id == role_id).first()
+    def get_by_id(self, role_id: int, include_related: bool = False) -> Optional[Role]:
+        query = self.db.query(Role)
+        if include_related:
+            query = query.options(
+                joinedload(Role.servers),
+                joinedload(Role.templates),
+                joinedload(Role.created_by_user),
+                joinedload(Role.updated_by_user)
+            )
+        return query.filter(Role.id == role_id).first()
 
     def get_by_name(self, name: str) -> Optional[Role]:
         return self.db.query(Role).filter(Role.name == name).first()

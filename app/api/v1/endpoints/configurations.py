@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 
 from app.schemas import ConfigurationCreate, ConfigurationUpdate, ConfigurationPublic
-from app.dependencies import get_current_user, get_configuration_service
-from app.models import User
+from app.dependencies import get_configuration_service, get_current_user
 from app.services import ConfigurationService
+from app.models import User
 
 router = APIRouter()
 
@@ -16,9 +16,8 @@ def create_configuration(
     current_user: User = Depends(get_current_user),
 ):
     """
-    ✅ Crée une nouvelle configuration si le nom est unique.
+    ✅ Crée une configuration avec association des OS cibles.
     """
-    
     return configuration_service.create(configuration_in, created_by_id=current_user.id)
 
 
@@ -42,14 +41,11 @@ def get_configuration(
     current_user: User = Depends(get_current_user),
 ):
     """
-    🔎 Récupère une configuration par son ID.
+    🔎 Récupère une configuration avec ses OS compatibles.
     """
-    configuration = configuration_service.get_by_id(configuration_id)
+    configuration = configuration_service.get_by_id(configuration_id, include_related=True)
     if not configuration:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Configuration introuvable."
-        )
+        raise HTTPException(status_code=404, detail="Configuration introuvable.")
     return configuration
 
 
@@ -61,14 +57,11 @@ def update_configuration(
     current_user: User = Depends(get_current_user),
 ):
     """
-    ✏️ Met à jour une configuration existante.
+    ✏️ Met à jour une configuration (y compris les OS liés).
     """
     updated = configuration_service.update(configuration_id, configuration_update, updated_by_id=current_user.id)
     if not updated:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Configuration introuvable."
-        )
+        raise HTTPException(status_code=404, detail="Configuration introuvable.")
     return updated
 
 
@@ -79,11 +72,8 @@ def delete_configuration(
     current_user: User = Depends(get_current_user),
 ):
     """
-    🗑 Supprime une configuration par son ID.
+    🗑 Supprime une configuration.
     """
     if not configuration_service.delete(configuration_id):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Configuration introuvable."
-        )
+        raise HTTPException(status_code=404, detail="Configuration introuvable.")
     return

@@ -63,3 +63,17 @@ def read_users_me(
     🔎 Récupère les infos de l'utilisateur actuellement connecté.
     """
     return current_user
+
+@router.get("/check-token", status_code=status.HTTP_200_OK)
+def check_token(current_user: User = Depends(get_current_user)):
+    """
+    🔐 Vérifie que le token JWT est valide et retourne un résumé utilisateur.
+    """
+    return {
+        "id": current_user.id,
+        "username": current_user.username,
+        "email": current_user.email,
+        "is_active": current_user.is_active
+    }
+
+

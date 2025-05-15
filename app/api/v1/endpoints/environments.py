@@ -1,15 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 
-from app.schemas import (
-    EnvironmentCreate,
-    EnvironmentUpdate,
-    EnvironmentInDB,
-    EnvironmentPublic,
-)
-from app.dependencies import get_current_user, get_environment_service
-from app.models import User
+from app.schemas import EnvironmentCreate, EnvironmentUpdate, EnvironmentPublic
+from app.dependencies import get_environment_service, get_current_user
 from app.services import EnvironmentService
+from app.models import User
 
 router = APIRouter()
 
@@ -21,13 +16,10 @@ def create_environment(
     current_user: User = Depends(get_current_user),
 ):
     """
-    ✅ Crée un nouvel environnement si le nom est unique.
+    ✅ Crée un environnement si le nom est unique.
     """
     if environment_service.get_by_name(environment_in.name):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Nom d’environnement déjà utilisé."
-        )
+        raise HTTPException(status_code=400, detail="Nom d’environnement déjà utilisé.")
     return environment_service.create(environment_in, created_by_id=current_user.id)
 
 
@@ -39,7 +31,7 @@ def list_environments(
     current_user: User = Depends(get_current_user),
 ):
     """
-    📄 Liste paginée de tous les environnements.
+    📄 Liste paginée des environnements.
     """
     return environment_service.list_all(skip=skip, limit=limit)
 
@@ -51,14 +43,11 @@ def get_environment(
     current_user: User = Depends(get_current_user),
 ):
     """
-    🔎 Récupère un environnement spécifique par son ID.
+    🔎 Récupère un environnement par ID.
     """
-    environment = environment_service.get_by_id(environment_id)
+    environment = environment_service.get_by_id(environment_id, include_related=True)
     if not environment:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Environnement introuvable."
-        )
+        raise HTTPException(status_code=404, detail="Environnement introuvable.")
     return environment
 
 
@@ -74,10 +63,7 @@ def update_environment(
     """
     updated = environment_service.update(environment_id, environment_update, updated_by_id=current_user.id)
     if not updated:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Environnement introuvable."
-        )
+        raise HTTPException(status_code=404, detail="Environnement introuvable.")
     return updated
 
 
@@ -88,11 +74,8 @@ def delete_environment(
     current_user: User = Depends(get_current_user),
 ):
     """
-    🗑 Supprime un environnement par son ID.
+    🗑 Supprime un environnement.
     """
     if not environment_service.delete(environment_id):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Environnement introuvable."
-        )
+        raise HTTPException(status_code=404, detail="Environnement introuvable.")
     return

@@ -6,7 +6,12 @@ from .environment import get_environment_service
 from .project import get_project_service
 from .server import get_server_service
 from .configuration import get_configuration_service 
-
+from .template import get_template_service
+from .template_configuration import get_template_configuration_service
+from .server_template import get_server_template_service
+from .server_configuration import get_server_configuration_service
+from .execution import get_execution_service
+from .execution_group import get_execution_group_service
 
 
 __all__ = [
@@ -20,4 +25,10 @@ __all__ = [
     "get_project_service",
     "get_server_service",
     "get_configuration_service",
+    "get_template_service",
+    "get_template_configuration_service",
+    "get_server_template_service",
+    "get_server_configuration_service",
+    "get_execution_service",
+    "get_execution_group_service",
 ]

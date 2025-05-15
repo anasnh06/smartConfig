@@ -1,6 +1,12 @@
+from __future__ import annotations
 from datetime import datetime
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+
 from pydantic import BaseModel, Field
+
+if TYPE_CHECKING:
+    from app.schemas.execution_group import ExecutionGroupShort
+    from app.schemas.user import UserShort
 
 
 class ExecutionShort(BaseModel):
@@ -20,7 +26,7 @@ class ExecutionBase(BaseModel):
 
 
 class ExecutionCreate(ExecutionBase):
-    pass  # Toutes les données sont générées automatiquement ou via backend
+    pass
 
 
 class ExecutionUpdate(BaseModel):
@@ -41,8 +47,6 @@ class ExecutionInDB(ExecutionBase):
         from_attributes = True
 
 
-from app.schemas.execution_group import ExecutionGroupShort
-
 class ExecutionPublic(BaseModel):
     id: int
     title: Optional[str] = None
@@ -51,10 +55,10 @@ class ExecutionPublic(BaseModel):
     finished_at: Optional[datetime] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
-    created_by: Optional[int] = None
-    updated_by: Optional[int] = None
+    created_by_user: Optional["UserShort"] = None
+    updated_by_user: Optional["UserShort"] = None
 
-    execution_groups: list[ExecutionGroupShort] = []
+    execution_groups: list["ExecutionGroupShort"] = []
 
     class Config:
         from_attributes = True

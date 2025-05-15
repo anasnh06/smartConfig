@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.api.v1.endpoints import users, auth, roles, os, environments, projects, servers, configurations
+from app.api.v1.endpoints import users, auth, roles, os, environments, projects, servers, configurations, templates, template_configurations, server_templates, server_configurations, execution_groups, executions
 from app.core.config import settings
 
 app = FastAPI(title=settings.app_name)
@@ -13,4 +13,10 @@ app.include_router(environments.router, prefix="/api/v1/environments", tags=["En
 app.include_router(projects.router, prefix="/api/v1/projects", tags=["Projects"])
 app.include_router(servers.router, prefix="/api/v1/servers", tags=["Servers"])
 app.include_router(configurations.router, prefix="/api/v1/configurations", tags=["Configurations"])
+app.include_router(templates.router, prefix="/api/v1/templates", tags=["Templates"])
+app.include_router(template_configurations.router, prefix="/api/v1/template-configurations", tags=["Template Configurations"])
+app.include_router(server_templates.router, prefix="/api/v1/server-templates", tags=["Server Templates"])
+app.include_router(server_configurations.router, prefix="/api/v1/server-configurations", tags=["Server Configurations"])
+app.include_router(execution_groups.router, prefix="/api/v1/execution-groups", tags=["Execution Groups"])
+app.include_router(executions.router, prefix="/api/v1/executions", tags=["Executions"])
 

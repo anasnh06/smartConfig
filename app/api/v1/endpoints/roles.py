@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 
-from app.schemas import RoleCreate, RoleUpdate, RolePublic
+from app.schemas import RoleCreate, RoleUpdate, RolePublic, RoleInDB
 from app.dependencies import get_role_service, get_current_user
 from app.models import User
 from app.services import RoleService
@@ -18,16 +18,12 @@ def create_role(
     """
     ✅ Crée un nouveau rôle si le nom est unique.
     """
-    existing = role_service.get_by_name(role_create.name)
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Nom du rôle déjà utilisé."
-        )
+    if role_service.get_by_name(role_create.name):
+        raise HTTPException(status_code=400, detail="Nom du rôle déjà utilisé.")
     return role_service.create(role_create, created_by_id=current_user.id)
 
 
-@router.get("/", response_model=List[RolePublic], status_code=status.HTTP_200_OK)
+@router.get("/", response_model=List[RoleInDB], status_code=status.HTTP_200_OK)
 def list_roles(
     skip: int = 0,
     limit: int = 100,
@@ -35,7 +31,7 @@ def list_roles(
     current_user: User = Depends(get_current_user),
 ):
     """
-    📄 Liste paginée des rôles existants.
+    📄 Liste paginée des rôles.
     """
     return role_service.list_all(skip=skip, limit=limit)
 
@@ -47,14 +43,11 @@ def get_role(
     current_user: User = Depends(get_current_user),
 ):
     """
-    🔎 Récupère un rôle par son ID.
+    🔎 Récupère un rôle par ID.
     """
-    role = role_service.get_by_id(role_id)
+    role = role_service.get_by_id(role_id, include_related=True)
     if not role:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Rôle introuvable."
-        )
+        raise HTTPException(status_code=404, detail="Rôle introuvable.")
     return role
 
 
@@ -70,10 +63,7 @@ def update_role(
     """
     updated = role_service.update(role_id, role_update, updated_by_id=current_user.id)
     if not updated:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Rôle introuvable."
-        )
+        raise HTTPException(status_code=404, detail="Rôle introuvable.")
     return updated
 
 
@@ -84,12 +74,8 @@ def delete_role(
     current_user: User = Depends(get_current_user),
 ):
     """
-    🗑 Supprime un rôle par son ID.
+    🗑 Supprime un rôle.
     """
-    deleted = role_service.delete(role_id)
-    if not deleted:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Rôle introuvable."
-        )
+    if not role_service.delete(role_id):
+        raise HTTPException(status_code=404, detail="Rôle introuvable.")
     return

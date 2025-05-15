@@ -16,16 +16,18 @@ class AuthService:
 
     def authenticate_user(self, username: str, password: str) -> Optional[User]:
         user = self.user_service.get_by_username(username)
-        if not user or not verify_password(password, user.hashed_password):
+        if not user:
+            return None
+        if not verify_password(password, user.hashed_password):
             return None
         return user
 
     def generate_token(self, user: User) -> str:
-        data = {"sub": user.username}
+        payload = {"sub": user.username}
         expires = timedelta(minutes=settings.access_token_expire_minutes)
-        return create_access_token(data, expires_delta=expires)
+        return create_access_token(payload, expires_delta=expires)
 
-    def ensure_user_is_active(self, user: User):
+    def ensure_user_is_active(self, user: User) -> None:
         if not user.is_active:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

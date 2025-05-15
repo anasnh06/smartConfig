@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 
 from app.schemas import ServerCreate, ServerUpdate, ServerPublic
-from app.dependencies import get_current_user, get_server_service
-from app.models import User
+from app.dependencies import get_server_service, get_current_user
 from app.services import ServerService
+from app.models import User
 
 router = APIRouter()
 
@@ -16,13 +16,10 @@ def create_server(
     current_user: User = Depends(get_current_user),
 ):
     """
-    ✅ Crée un nouveau serveur si le nom est unique.
+    ✅ Crée un serveur avec ses rôles et infos système.
     """
     if server_service.get_by_name(server_in.name):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Nom du serveur déjà utilisé."
-        )
+        raise HTTPException(status_code=400, detail="Nom du serveur déjà utilisé.")
     return server_service.create(server_in, created_by_id=current_user.id)
 
 
@@ -46,14 +43,11 @@ def get_server(
     current_user: User = Depends(get_current_user),
 ):
     """
-    🔎 Récupère un serveur par son ID.
+    🔎 Détail complet du serveur (configurations, templates, rôles, etc.).
     """
-    server = server_service.get_by_id(server_id)
+    server = server_service.get_by_id(server_id, include_related=True)
     if not server:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Serveur introuvable."
-        )
+        raise HTTPException(status_code=404, detail="Serveur introuvable.")
     return server
 
 
@@ -65,14 +59,11 @@ def update_server(
     current_user: User = Depends(get_current_user),
 ):
     """
-    ✏️ Met à jour un serveur existant.
+    ✏️ Met à jour les infos et rôles du serveur.
     """
     updated = server_service.update(server_id, server_update, updated_by_id=current_user.id)
     if not updated:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Serveur introuvable."
-        )
+        raise HTTPException(status_code=404, detail="Serveur introuvable.")
     return updated
 
 
@@ -83,11 +74,8 @@ def delete_server(
     current_user: User = Depends(get_current_user),
 ):
     """
-    🗑 Supprime un serveur par son ID.
+    🗑 Supprime un serveur.
     """
     if not server_service.delete(server_id):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Serveur introuvable."
-        )
+        raise HTTPException(status_code=404, detail="Serveur introuvable.")
     return

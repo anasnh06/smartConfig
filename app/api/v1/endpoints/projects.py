@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 
 from app.schemas import ProjectCreate, ProjectUpdate, ProjectPublic
-from app.dependencies import get_current_user, get_project_service
-from app.models import User
+from app.dependencies import get_project_service, get_current_user
 from app.services import ProjectService
+from app.models import User
 
 router = APIRouter()
 
@@ -19,10 +19,7 @@ def create_project(
     ✅ Crée un projet si le nom est unique.
     """
     if project_service.get_by_name(project_in.name):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Nom du projet déjà utilisé."
-        )
+        raise HTTPException(status_code=400, detail="Nom du projet déjà utilisé.")
     return project_service.create(project_in, created_by_id=current_user.id)
 
 
@@ -46,14 +43,11 @@ def get_project(
     current_user: User = Depends(get_current_user),
 ):
     """
-    🔎 Récupère un projet par son ID.
+    🔎 Récupère un projet par ID.
     """
-    project = project_service.get_by_id(project_id)
+    project = project_service.get_by_id(project_id, include_related=True)
     if not project:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Projet introuvable."
-        )
+        raise HTTPException(status_code=404, detail="Projet introuvable.")
     return project
 
 
@@ -65,14 +59,11 @@ def update_project(
     current_user: User = Depends(get_current_user),
 ):
     """
-    ✏️ Met à jour un projet.
+    ✏️ Met à jour un projet existant.
     """
     updated = project_service.update(project_id, project_update, updated_by_id=current_user.id)
     if not updated:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Projet introuvable."
-        )
+        raise HTTPException(status_code=404, detail="Projet introuvable.")
     return updated
 
 
@@ -86,8 +77,5 @@ def delete_project(
     🗑 Supprime un projet.
     """
     if not project_service.delete(project_id):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Projet introuvable."
-        )
-    return 
+        raise HTTPException(status_code=404, detail="Projet introuvable.")
+    return

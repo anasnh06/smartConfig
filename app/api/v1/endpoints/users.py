@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 
-from app.schemas import UserCreate, UserUpdate, UserPublic
+from app.schemas import UserCreate, UserUpdate, UserPublic, UserInDB
 from app.dependencies import get_user_service, get_current_user
 from app.models import User
 from app.services import UserService
@@ -22,10 +22,11 @@ def create_user(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email déjà utilisé")
     if user_service.get_by_username(user_create.username):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username déjà utilisé")
-    return user_service.create(user_create, created_by_id=current_user.id)
+    user = user_service.create(user_create, created_by_id=current_user.id)
+    return user_service.get_by_id(user.id, include_related=True)    
 
 
-@router.get("/", response_model=List[UserPublic], status_code=status.HTTP_200_OK)
+@router.get("/", response_model=List[UserInDB], status_code=status.HTTP_200_OK)
 def list_users(
     skip: int = 0,
     limit: int = 10,
@@ -47,7 +48,7 @@ def get_user(
     """
     🔎 Récupère un utilisateur par son ID.
     """
-    user = user_service.get_by_id(user_id)
+    user = user_service.get_by_id(user_id, include_related=True)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Utilisateur introuvable")
     return user
@@ -66,7 +67,10 @@ def update_user(
     updated_user = user_service.update(user_id, user_update, updated_by_id=current_user.id)
     if not updated_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Utilisateur introuvable")
-    return updated_user
+    
+    # ✅ Ajout : retourne l’objet avec les relations chargées
+    return user_service.get_by_id(updated_user.id, include_related=True)
+
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -1,5 +1,5 @@
 from typing import Optional, List
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models import User
 from app.schemas import UserCreate, UserUpdate
@@ -10,8 +10,14 @@ class UserService:
     def __init__(self, db: Session):
         self.db = db
 
-    def get_by_id(self, user_id: int) -> Optional[User]:
-        return self.db.query(User).filter(User.id == user_id).first()
+    def get_by_id(self, user_id: int, include_related: bool = False) -> Optional[User]:
+        query = self.db.query(User)
+        if include_related:
+            query = query.options(
+                joinedload(User.creator),
+                joinedload(User.updater)
+            )
+        return query.filter(User.id == user_id).first()
 
     def get_by_username(self, username: str) -> Optional[User]:
         return self.db.query(User).filter(User.username == username).first()
@@ -33,9 +39,13 @@ class UserService:
         self.db.add(user)
         self.db.commit()
         self.db.refresh(user)
+
+        
+
         return user
 
-    def update(self, user_id: int, user_in: UserUpdate, updated_by_id: int) -> Optional[User]:
+
+    def update(self, user_id: int, user_in: UserUpdate, updated_by_id: Optional[int] = None) -> Optional[User]:
         user = self.get_by_id(user_id)
         if not user:
             return None
@@ -45,11 +55,14 @@ class UserService:
             if field == "password":
                 user.hashed_password = get_password_hash(value)
             else:
-                setattr(user, field, value)
+                setattr(user, field, value) 
 
         user.updated_by = updated_by_id
         self.db.commit()
         self.db.refresh(user)
+
+        
+
         return user
 
     def delete(self, user_id: int) -> bool:

@@ -1,5 +1,5 @@
 from typing import Optional, List
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models import Project
 from app.schemas import ProjectCreate, ProjectUpdate
@@ -9,8 +9,14 @@ class ProjectService:
     def __init__(self, db: Session):
         self.db = db
 
-    def get_by_id(self, project_id: int) -> Optional[Project]:
-        return self.db.query(Project).filter(Project.id == project_id).first()
+    def get_by_id(self, project_id: int, include_related: bool = False) -> Optional[Project]:
+        query = self.db.query(Project)
+        if include_related:
+            query = query.options(joinedload(Project.servers),
+                                  joinedload(Project.created_by_user),
+                                  joinedload(Project.updated_by_user),
+            )
+        return query.filter(Project.id == project_id).first()
 
     def get_by_name(self, name: str) -> Optional[Project]:
         return self.db.query(Project).filter(Project.name == name).first()

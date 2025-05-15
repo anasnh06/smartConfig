@@ -1,11 +1,14 @@
+from __future__ import annotations
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
 
 from pydantic import BaseModel, Field
 
+if TYPE_CHECKING:
+    from app.schemas.server import ServerShort
+    from app.schemas.user import UserShort
 
 
-# 🔹 Short schema (pour relations dans d'autres entités)
 class ProjectShort(BaseModel):
     id: int
     name: str
@@ -14,24 +17,20 @@ class ProjectShort(BaseModel):
         from_attributes = True
 
 
-# 🔸 Base commun
 class ProjectBase(BaseModel):
     name: str = Field(..., max_length=100, description="Nom du projet")
     description: Optional[str] = Field(None, description="Description optionnelle du projet")
 
 
-# 🟢 Création
 class ProjectCreate(ProjectBase):
     pass
 
 
-# ✏️ Mise à jour
 class ProjectUpdate(BaseModel):
     name: Optional[str] = Field(None, max_length=100, description="Nom du projet")
     description: Optional[str] = Field(None, description="Description du projet")
 
 
-# 🛠 InDB (avec audit)
 class ProjectInDB(ProjectBase):
     id: int
     created_at: Optional[datetime] = None
@@ -43,21 +42,16 @@ class ProjectInDB(ProjectBase):
         from_attributes = True
 
 
-
-
-from app.schemas.server import ServerShort
-# 🌐 Public (exposé côté API)
 class ProjectPublic(BaseModel):
     id: int
     name: str = Field(..., max_length=100, description="Nom du projet")
     description: Optional[str] = Field(None, description="Description optionnelle du projet")
-    
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
-    created_by: Optional[int] = None
-    updated_by: Optional[int] = None
+    created_by_user: Optional["UserShort"] = None
+    updated_by_user: Optional["UserShort"] = None
 
-    servers: List[ServerShort] = []
+    servers: List["ServerShort"] = []
 
     class Config:
         from_attributes = True

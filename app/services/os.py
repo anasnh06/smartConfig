@@ -1,5 +1,5 @@
 from typing import List, Optional
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models import OperatingSystem
 from app.schemas import OperatingSystemCreate, OperatingSystemUpdate
@@ -9,8 +9,17 @@ class OperatingSystemService:
     def __init__(self, db: Session):
         self.db = db
 
-    def get_by_id(self, os_id: int) -> Optional[OperatingSystem]:
-        return self.db.query(OperatingSystem).filter(OperatingSystem.id == os_id).first()
+    def get_by_id(self, os_id: int, include_related: bool = False) -> Optional[OperatingSystem]:
+        query = self.db.query(OperatingSystem)
+        if include_related:
+            query = query.options(
+                joinedload(OperatingSystem.servers),
+                joinedload(OperatingSystem.configurations),
+                joinedload(OperatingSystem.templates),
+                joinedload(OperatingSystem.created_by_user),
+                joinedload(OperatingSystem.updated_by_user),
+            )
+        return query.filter(OperatingSystem.id == os_id).first()
     
     def get_by_name(self, name: str) -> Optional[OperatingSystem]:
         return self.db.query(OperatingSystem).filter(OperatingSystem.name == name).first()
