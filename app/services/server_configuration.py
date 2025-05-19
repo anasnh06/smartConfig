@@ -16,7 +16,9 @@ class ServerConfigurationService:
                 joinedload(ServerConfiguration.server),
                 joinedload(ServerConfiguration.configuration),
                 joinedload(ServerConfiguration.server_template),
-                joinedload(ServerConfiguration.execution_group)
+                joinedload(ServerConfiguration.execution_group),
+                joinedload(ServerConfiguration.created_by_user),
+                joinedload(ServerConfiguration.updated_by_user),
             )
         return query.filter(ServerConfiguration.id == sc_id).first()
 

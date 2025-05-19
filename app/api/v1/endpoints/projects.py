@@ -1,7 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 
-from app.schemas import ProjectCreate, ProjectUpdate, ProjectPublic
+from app.schemas import (
+    ProjectCreate,
+    ProjectUpdate,
+    ProjectPublic,
+    ProjectInDB,
+)
 from app.dependencies import get_project_service, get_current_user
 from app.services import ProjectService
 from app.models import User
@@ -19,11 +24,13 @@ def create_project(
     ✅ Crée un projet si le nom est unique.
     """
     if project_service.get_by_name(project_in.name):
-        raise HTTPException(status_code=400, detail="Nom du projet déjà utilisé.")
-    return project_service.create(project_in, created_by_id=current_user.id)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nom du projet déjà utilisé.")
+    
+    project = project_service.create(project_in, created_by_id=current_user.id)
+    return project_service.get_by_id(project.id, include_related=True)
 
 
-@router.get("/", response_model=List[ProjectPublic], status_code=status.HTTP_200_OK)
+@router.get("/", response_model=List[ProjectInDB], status_code=status.HTTP_200_OK)
 def list_projects(
     skip: int = 0,
     limit: int = 100,
@@ -43,11 +50,11 @@ def get_project(
     current_user: User = Depends(get_current_user),
 ):
     """
-    🔎 Récupère un projet par ID.
+    🔎 Récupère un projet par ID avec les relations.
     """
     project = project_service.get_by_id(project_id, include_related=True)
     if not project:
-        raise HTTPException(status_code=404, detail="Projet introuvable.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Projet introuvable.")
     return project
 
 
@@ -63,8 +70,8 @@ def update_project(
     """
     updated = project_service.update(project_id, project_update, updated_by_id=current_user.id)
     if not updated:
-        raise HTTPException(status_code=404, detail="Projet introuvable.")
-    return updated
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Projet introuvable.")
+    return project_service.get_by_id(updated.id, include_related=True)
 
 
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -77,5 +84,5 @@ def delete_project(
     🗑 Supprime un projet.
     """
     if not project_service.delete(project_id):
-        raise HTTPException(status_code=404, detail="Projet introuvable.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Projet introuvable.")
     return

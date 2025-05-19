@@ -17,6 +17,8 @@ class TemplateService:
                 joinedload(Template.operating_systems),
                 joinedload(Template.template_configurations),
                 joinedload(Template.template_servers),
+                joinedload(Template.created_by_user),
+                joinedload(Template.updated_by_user),
             )
         return query.filter(Template.id == template_id).first()
 

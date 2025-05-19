@@ -19,6 +19,8 @@ class ServerService:
                 joinedload(Server.roles),
                 joinedload(Server.server_templates),
                 joinedload(Server.server_configurations),
+                joinedload(Server.created_by_user),
+                joinedload(Server.updated_by_user),
             )
         return query.filter(Server.id == server_id).first()
 

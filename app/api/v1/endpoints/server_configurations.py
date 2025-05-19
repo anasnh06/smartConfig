@@ -5,6 +5,7 @@ from app.schemas import (
     ServerConfigurationCreate,
     ServerConfigurationUpdate,
     ServerConfigurationPublic,
+    ServerConfigurationInDB,
 )
 from app.dependencies import get_server_configuration_service, get_current_user
 from app.services import ServerConfigurationService
@@ -22,10 +23,11 @@ def create_server_configuration(
     """
     ✅ Crée une exécution serveur/configuration (libre, via template ou directe).
     """
-    return service.create(server_config_in, created_by_id=current_user.id)
+    config = service.create(server_config_in, created_by_id=current_user.id)
+    return service.get_by_id(config.id, include_related=True)
 
 
-@router.get("/", response_model=List[ServerConfigurationPublic], status_code=status.HTTP_200_OK)
+@router.get("/", response_model=List[ServerConfigurationInDB], status_code=status.HTTP_200_OK)
 def list_server_configurations(
     skip: int = 0,
     limit: int = 100,
@@ -49,7 +51,7 @@ def get_server_configuration(
     """
     config = service.get_by_id(server_config_id, include_related=True)
     if not config:
-        raise HTTPException(status_code=404, detail="Exécution introuvable.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exécution introuvable.")
     return config
 
 
@@ -65,8 +67,8 @@ def update_server_configuration(
     """
     updated = service.update(server_config_id, update_data, updated_by_id=current_user.id)
     if not updated:
-        raise HTTPException(status_code=404, detail="Exécution introuvable.")
-    return updated
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exécution introuvable.")
+    return service.get_by_id(updated.id, include_related=True)
 
 
 @router.delete("/{server_config_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -79,5 +81,5 @@ def delete_server_configuration(
     🗑 Supprime une exécution serveur/configuration.
     """
     if not service.delete(server_config_id):
-        raise HTTPException(status_code=404, detail="Exécution introuvable.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exécution introuvable.")
     return

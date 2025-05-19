@@ -1,7 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 
-from app.schemas import TemplateCreate, TemplateUpdate, TemplatePublic
+from app.schemas import (
+    TemplateCreate,
+    TemplateUpdate,
+    TemplatePublic,
+    TemplateInDB,
+)
 from app.dependencies import get_template_service, get_current_user
 from app.services import TemplateService
 from app.models import User
@@ -18,10 +23,11 @@ def create_template(
     """
     ✅ Crée un template avec OS compatibles et rôle associé.
     """
-    return template_service.create(template_in, created_by_id=current_user.id)
+    template = template_service.create(template_in, created_by_id=current_user.id)
+    return template_service.get_by_id(template.id, include_related=True)
 
 
-@router.get("/", response_model=List[TemplatePublic], status_code=status.HTTP_200_OK)
+@router.get("/", response_model=List[TemplateInDB], status_code=status.HTTP_200_OK)
 def list_templates(
     skip: int = 0,
     limit: int = 100,
@@ -31,7 +37,7 @@ def list_templates(
     """
     📄 Liste paginée des templates.
     """
-    return template_service.list_all(skip=skip, limit=limit)    
+    return template_service.list_all(skip=skip, limit=limit)
 
 
 @router.get("/{template_id}", response_model=TemplatePublic, status_code=status.HTTP_200_OK)
@@ -45,7 +51,7 @@ def get_template(
     """
     template = template_service.get_by_id(template_id, include_related=True)
     if not template:
-        raise HTTPException(status_code=404, detail="Template introuvable.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Template introuvable.")
     return template
 
 
@@ -61,8 +67,8 @@ def update_template(
     """
     updated = template_service.update(template_id, template_update, updated_by_id=current_user.id)
     if not updated:
-        raise HTTPException(status_code=404, detail="Template introuvable.")
-    return updated
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Template introuvable.")
+    return template_service.get_by_id(updated.id, include_related=True)
 
 
 @router.delete("/{template_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -75,5 +81,5 @@ def delete_template(
     🗑 Supprime un template.
     """
     if not template_service.delete(template_id):
-        raise HTTPException(status_code=404, detail="Template introuvable.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Template introuvable.")
     return

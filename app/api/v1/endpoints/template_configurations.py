@@ -5,6 +5,7 @@ from app.schemas import (
     TemplateConfigurationCreate,
     TemplateConfigurationUpdate,
     TemplateConfigurationPublic,
+    TemplateConfigurationInDB,
 )
 from app.dependencies import get_template_configuration_service, get_current_user
 from app.services import TemplateConfigurationService
@@ -22,10 +23,11 @@ def attach_configuration_to_template(
     """
     📎 Attache une configuration à un template avec un ordre d'exécution.
     """
-    return service.create(attach_in, created_by_id=current_user.id)
+    assoc = service.create(attach_in, created_by_id=current_user.id)
+    return service.get_by_id(assoc.id, include_related=True)
 
 
-@router.get("/", response_model=List[TemplateConfigurationPublic], status_code=status.HTTP_200_OK)
+@router.get("/", response_model=List[TemplateConfigurationInDB], status_code=status.HTTP_200_OK)
 def list_template_configurations(
     skip: int = 0,
     limit: int = 100,
@@ -49,7 +51,7 @@ def get_template_configuration(
     """
     association = service.get_by_id(attachment_id, include_related=True)
     if not association:
-        raise HTTPException(status_code=404, detail="Lien introuvable.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lien introuvable.")
     return association
 
 
@@ -65,8 +67,8 @@ def update_template_configuration(
     """
     updated = service.update(attachment_id, update_data, updated_by_id=current_user.id)
     if not updated:
-        raise HTTPException(status_code=404, detail="Lien introuvable.")
-    return updated
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lien introuvable.")
+    return service.get_by_id(updated.id, include_related=True)
 
 
 @router.delete("/{attachment_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -79,5 +81,5 @@ def delete_template_configuration(
     🗑 Supprime une liaison Template <-> Configuration.
     """
     if not service.delete(attachment_id):
-        raise HTTPException(status_code=404, detail="Lien introuvable.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lien introuvable.")
     return

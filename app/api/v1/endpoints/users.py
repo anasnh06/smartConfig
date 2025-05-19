@@ -1,7 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List
 
-from app.schemas import UserCreate, UserUpdate, UserPublic, UserInDB
+from app.schemas import (
+    UserCreate, 
+    UserUpdate, 
+    UserPublic, 
+    UserInDB,
+)
 from app.dependencies import get_user_service, get_current_user
 from app.models import User
 from app.services import UserService

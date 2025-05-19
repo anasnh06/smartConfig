@@ -14,7 +14,9 @@ class TemplateConfigurationService:
         if include_related:
             query = query.options(
                 joinedload(TemplateConfiguration.template),
-                joinedload(TemplateConfiguration.configuration)
+                joinedload(TemplateConfiguration.configuration),
+                joinedload(TemplateConfiguration.created_by_user),
+                joinedload(TemplateConfiguration.updated_by_user),
             )
         return query.filter(TemplateConfiguration.id == tc_id).first()
 

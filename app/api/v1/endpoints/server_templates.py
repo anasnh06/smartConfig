@@ -5,6 +5,7 @@ from app.schemas import (
     ServerTemplateCreate,
     ServerTemplateUpdate,
     ServerTemplatePublic,
+    ServerTemplateInDB,
 )
 from app.dependencies import get_server_template_service, get_current_user
 from app.services import ServerTemplateService
@@ -22,10 +23,11 @@ def attach_template_to_server(
     """
     📎 Attache un template à un serveur (optionnellement avec contexte).
     """
-    return service.create(attach_in, created_by_id=current_user.id)
+    assoc = service.create(attach_in, created_by_id=current_user.id)
+    return service.get_by_id(assoc.id, include_related=True)
 
 
-@router.get("/", response_model=List[ServerTemplatePublic], status_code=status.HTTP_200_OK)
+@router.get("/", response_model=List[ServerTemplateInDB], status_code=status.HTTP_200_OK)
 def list_server_templates(
     skip: int = 0,
     limit: int = 100,
@@ -49,7 +51,7 @@ def get_server_template(
     """
     assoc = service.get_by_id(attachment_id, include_related=True)
     if not assoc:
-        raise HTTPException(status_code=404, detail="Liaison introuvable.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Liaison introuvable.")
     return assoc
 
 
@@ -65,8 +67,8 @@ def update_server_template(
     """
     updated = service.update(attachment_id, update_data, updated_by_id=current_user.id)
     if not updated:
-        raise HTTPException(status_code=404, detail="Liaison introuvable.")
-    return updated
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Liaison introuvable.")
+    return service.get_by_id(updated.id, include_related=True)
 
 
 @router.delete("/{attachment_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -79,5 +81,5 @@ def delete_server_template(
     🗑 Supprime une liaison serveur/template.
     """
     if not service.delete(attachment_id):
-        raise HTTPException(status_code=404, detail="Liaison introuvable.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Liaison introuvable.")
     return

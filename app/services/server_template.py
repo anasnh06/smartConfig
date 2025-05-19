@@ -15,7 +15,9 @@ class ServerTemplateService:
             query = query.options(
                 joinedload(ServerTemplate.server),
                 joinedload(ServerTemplate.template),
-                joinedload(ServerTemplate.server_configurations)
+                joinedload(ServerTemplate.server_configurations),
+                joinedload(ServerTemplate.created_by_user),
+                joinedload(ServerTemplate.updated_by_user),
             )
         return query.filter(ServerTemplate.id == st_id).first()
 

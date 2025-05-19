@@ -5,6 +5,7 @@ from app.schemas import (
     ExecutionGroupCreate,
     ExecutionGroupUpdate,
     ExecutionGroupPublic,
+    ExecutionGroupInDB,
 )
 from app.dependencies import get_current_user, get_execution_group_service
 from app.services import ExecutionGroupService
@@ -22,10 +23,11 @@ def create_execution_group(
     """
     ✅ Crée un groupe d'exécution.
     """
-    return service.create(execution_group_in, created_by_id=current_user.id)
+    group = service.create(execution_group_in, created_by_id=current_user.id)
+    return service.get_by_id(group.id, include_related=True)
 
 
-@router.get("/", response_model=List[ExecutionGroupPublic], status_code=status.HTTP_200_OK)
+@router.get("/", response_model=List[ExecutionGroupInDB], status_code=status.HTTP_200_OK)
 def list_execution_groups(
     skip: int = 0,
     limit: int = 100,
@@ -66,7 +68,7 @@ def update_execution_group(
     updated = service.update(execution_group_id, update_data, updated_by_id=current_user.id)
     if not updated:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Groupe introuvable.")
-    return updated
+    return service.get_by_id(updated.id, include_related=True)
 
 
 @router.delete("/{execution_group_id}", status_code=status.HTTP_204_NO_CONTENT)

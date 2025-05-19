@@ -5,6 +5,7 @@ from app.schemas import (
     ExecutionCreate,
     ExecutionUpdate,
     ExecutionPublic,
+    ExecutionInDB,
 )
 from app.dependencies import get_current_user, get_execution_service
 from app.services import ExecutionService
@@ -22,10 +23,11 @@ def create_execution(
     """
     ✅ Crée une exécution globale (peut contenir plusieurs groupes et serveurs).
     """
-    return service.create(execution_in, created_by_id=current_user.id)
+    execution = service.create(execution_in, created_by_id=current_user.id)
+    return service.get_by_id(execution.id, include_related=True)
 
 
-@router.get("/", response_model=List[ExecutionPublic], status_code=status.HTTP_200_OK)
+@router.get("/", response_model=List[ExecutionInDB], status_code=status.HTTP_200_OK)
 def list_executions(
     skip: int = 0,
     limit: int = 100,
@@ -66,7 +68,7 @@ def update_execution(
     updated = service.update(execution_id, update_data, updated_by_id=current_user.id)
     if not updated:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exécution introuvable.")
-    return updated
+    return service.get_by_id(updated.id, include_related=True)
 
 
 @router.delete("/{execution_id}", status_code=status.HTTP_204_NO_CONTENT)
