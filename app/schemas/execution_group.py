@@ -6,13 +6,15 @@ from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from app.schemas.execution import ExecutionShort
-    from app.schemas.server_configuration import ServerConfigurationShort
+    from app.schemas.server_configuration import ServerConfigurationShortForExecution
     from app.schemas.user import UserShort
 
 
 class ExecutionGroupShort(BaseModel):
     id: int
     name: Optional[str] = None
+    status: Optional[str] = None
+
 
     class Config:
         from_attributes = True
@@ -20,6 +22,7 @@ class ExecutionGroupShort(BaseModel):
 
 class ExecutionGroupBase(BaseModel):
     name: Optional[str] = Field(None, description="Nom ou étiquette du groupe d’exécution")
+    status: Optional[str] = Field(default="pending", description="Nom ou étiquette du groupe d’exécution")
 
 
 class ExecutionGroupCreate(ExecutionGroupBase):
@@ -28,6 +31,7 @@ class ExecutionGroupCreate(ExecutionGroupBase):
 
 class ExecutionGroupUpdate(BaseModel):
     name: Optional[str] = None
+    status: Optional[str] = None
 
 
 class ExecutionGroupInDB(ExecutionGroupBase):
@@ -61,7 +65,7 @@ class ExecutionGroupPublic(BaseModel):
     updated_by_user: Optional["UserShort"] = None
 
     execution: "ExecutionShort"
-    server_configurations: list["ServerConfigurationShort"] = []
+    server_configurations: list["ServerConfigurationShortForExecution"] = []
 
     class Config:
         from_attributes = True

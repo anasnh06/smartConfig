@@ -68,6 +68,9 @@ def update_project(
     """
     ✏️ Met à jour un projet existant.
     """
+
+    if project_service.get_by_name(project_update.name):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nom du projet déjà utilisé.")
     updated = project_service.update(project_id, project_update, updated_by_id=current_user.id)
     if not updated:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Projet introuvable.")

@@ -2,7 +2,7 @@ from typing import Optional, List
 from sqlalchemy.orm import Session, joinedload
 
 from app.models import TemplateConfiguration
-from app.schemas import TemplateConfigurationCreate, TemplateConfigurationUpdate
+from app.schemas import TemplateConfigurationCreate, TemplateConfigurationUpdate, BulkAttachConfigurationItem
 
 
 class TemplateConfigurationService:
@@ -57,3 +57,33 @@ class TemplateConfigurationService:
         self.db.delete(tc)
         self.db.commit()
         return True
+
+
+    def attach_many(
+        self,
+        template_id: int,
+        items: List[BulkAttachConfigurationItem],
+        created_by_id: Optional[int] = None
+    ) -> List[TemplateConfiguration]:
+        """
+        📎 Attache plusieurs configurations à un template sans remplacer les existants.
+        """
+        result = []
+        for item in items:
+            tc = TemplateConfiguration(
+                template_id=template_id,
+                configuration_id=item.configuration_id,
+                order=item.order,
+                comment=item.comment,
+                created_by=created_by_id
+            )
+            self.db.add(tc)
+            result.append(tc)
+
+        self.db.commit()
+
+        for tc in result:
+            self.db.refresh(tc)
+
+        return result
+   

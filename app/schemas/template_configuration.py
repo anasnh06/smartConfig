@@ -1,6 +1,6 @@
 from __future__ import annotations
 from datetime import datetime
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING, List
 
 from pydantic import BaseModel, Field
 
@@ -72,3 +72,14 @@ class TemplateConfigurationPublic(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class BulkAttachConfigurationItem(BaseModel):
+    configuration_id: int
+    order: Optional[int] = None
+    comment: Optional[str] = None
+
+
+class BulkAttachToTemplate(BaseModel):
+    template_id: int
+    configurations: List[BulkAttachConfigurationItem]

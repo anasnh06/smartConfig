@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from app.api.v1.endpoints import users, auth, roles, os, environments, projects, servers, configurations, templates, template_configurations, server_templates, server_configurations, execution_groups, executions
 from app.core.config import settings
 
-app = FastAPI(title=settings.app_name)
+app = FastAPI(title=settings.app_name, debug=True)
 
 # Include routers
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Auth"])

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Body
 from typing import List
 
 from app.schemas import (
@@ -6,6 +6,7 @@ from app.schemas import (
     TemplateConfigurationUpdate,
     TemplateConfigurationPublic,
     TemplateConfigurationInDB,
+    BulkAttachToTemplate,
 )
 from app.dependencies import get_template_configuration_service, get_current_user
 from app.services import TemplateConfigurationService
@@ -83,3 +84,18 @@ def delete_template_configuration(
     if not service.delete(attachment_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Lien introuvable.")
     return
+
+@router.post("/bulk-attach", response_model=List[TemplateConfigurationPublic], status_code=status.HTTP_201_CREATED)
+def bulk_attach_configurations(
+    payload: BulkAttachToTemplate = Body(...),
+    service: TemplateConfigurationService = Depends(get_template_configuration_service),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    📎 Attache plusieurs configurations à un template (sans écrasement).
+    """
+    return service.attach_many(
+        template_id=payload.template_id,
+        items=payload.configurations,
+        created_by_id=current_user.id
+    )

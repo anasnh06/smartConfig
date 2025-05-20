@@ -68,6 +68,9 @@ def update_role(
     """
     ✏️ Met à jour un rôle existant.
     """
+
+    if role_service.get_by_name(role_update.name):
+        raise HTTPException(status_code=400, detail="Nom du rôle déjà utilisé.")
     updated = role_service.update(role_id, role_update, updated_by_id=current_user.id)
     if not updated:
         raise HTTPException(status_code=404, detail="Rôle introuvable.")

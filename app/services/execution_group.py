@@ -26,7 +26,7 @@ class ExecutionGroupService:
     def create(self, eg_in: ExecutionGroupCreate, created_by_id: Optional[int] = None) -> ExecutionGroup:
         eg = ExecutionGroup(
             name=eg_in.name,
-            description=eg_in.description,
+            status=eg_in.status,
             execution_id=eg_in.execution_id,
             created_by=created_by_id
         )

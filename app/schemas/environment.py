@@ -45,8 +45,8 @@ class EnvironmentPublic(BaseModel):
     name: str
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
-    created_by: Optional["UserShort"] = None
-    updated_by: Optional["UserShort"] = None
+    created_by_user: Optional["UserShort"] = None
+    updated_by_user: Optional["UserShort"] = None
 
     servers: List["ServerShort"] = []
 

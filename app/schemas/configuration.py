@@ -60,8 +60,8 @@ class ConfigurationPublic(BaseModel):
     description: Optional[str] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
-    created_by: Optional["UserShort"] = None
-    updated_by: Optional["UserShort"] = None
+    created_by_user: Optional["UserShort"] = None
+    updated_by_user: Optional["UserShort"] = None
 
     operating_systems: List["OperatingSystemShort"] = []
     configuration_servers: List["ServerConfigurationShortForConfiguration"] = []

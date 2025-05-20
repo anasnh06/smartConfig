@@ -1,7 +1,7 @@
 from typing import Optional, List
 from sqlalchemy.orm import Session, joinedload
 
-from app.models import Configuration
+from app.models import Configuration, OperatingSystem
 from app.schemas import ConfigurationCreate, ConfigurationUpdate
 
 
@@ -46,17 +46,22 @@ class ConfigurationService:
             description=configuration_in.description,
             created_by=created_by_id
         )
+
+        # ✅ Many-to-many : assignation des rôles
+        if configuration_in.operating_system_ids:
+            operating_systems = self.db.query(OperatingSystem).filter(OperatingSystem.id.in_(configuration_in.operating_system_ids)).all()
+            configuration.operating_systems = operating_systems
         self.db.add(configuration)
 
-        # Ajout des OS compatibles (many-to-many simple)
-        if configuration_in.operating_system_ids:
-            configuration.operating_systems = self.db.query(
-                Configuration.operating_systems.property.mapper.class_
-            ).filter(
-                Configuration.operating_systems.property.secondary.c.operating_system_id.in_(
-                    configuration_in.operating_system_ids
-                )
-            ).all()
+        # # Ajout des OS compatibles (many-to-many simple)
+        # if configuration_in.operating_system_ids:
+        #     configuration.operating_systems = self.db.query(
+        #         Configuration.operating_systems.property.mapper.class_
+        #     ).filter(
+        #         Configuration.operating_systems.property.secondary.c.operating_system_id.in_(
+        #             configuration_in.operating_system_ids
+        #         )
+        #     ).all()
 
         self.db.commit()
         self.db.refresh(configuration)
@@ -71,13 +76,10 @@ class ConfigurationService:
             return None
 
         update_data = configuration_in.model_dump(exclude_unset=True)
+
         for field, value in update_data.items():
             if field == "operating_system_ids":
-                os_list = self.db.query(
-                    Configuration.operating_systems.property.mapper.class_
-                ).filter(
-                    Configuration.operating_systems.property.secondary.c.operating_system_id.in_(value)
-                ).all()
+                os_list = self.db.query(OperatingSystem).filter(OperatingSystem.id.in_(value)).all()
                 configuration.operating_systems = os_list
             else:
                 setattr(configuration, field, value)

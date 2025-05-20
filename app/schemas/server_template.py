@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from app.schemas.template import TemplateShort
     from app.schemas.server import ServerShort
     from app.schemas.user import UserShort
+    from app.schemas.server_configuration import ServerConfigurationShort
 
 
 class ServerTemplateShort(BaseModel):
@@ -69,6 +70,7 @@ class ServerTemplatePublic(BaseModel):
 
     server: "ServerShort"
     template: "TemplateShort"
+    server_configurations: list["ServerConfigurationShort"] = []
 
     class Config:
         from_attributes = True

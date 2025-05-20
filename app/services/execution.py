@@ -24,8 +24,8 @@ class ExecutionService:
 
     def create(self, execution_in: ExecutionCreate, created_by_id: Optional[int] = None) -> Execution:
         execution = Execution(
-            name=execution_in.name,
-            description=execution_in.description,
+            title=execution_in.title,
+            status=execution_in.status,
             created_by=created_by_id
         )
         self.db.add(execution)

@@ -20,6 +20,16 @@ class ServerConfigurationShort(BaseModel):
 
     class Config:
         from_attributes = True
+class ServerConfigurationShortForExecution(BaseModel):
+    id: int
+    status: Optional[str] = None
+    return_code: Optional[int] = None
+    configuration: Optional["ConfigurationShort"] = None
+    server: "ServerShort"
+
+    class Config:
+        from_attributes = True
+
 
 
 class ServerConfigurationShortForConfiguration(BaseModel):
@@ -57,7 +67,7 @@ class ServerConfigurationUpdate(BaseModel):
     finished_at: Optional[datetime] = None
     source: Optional[str] = None
     custom_command: Optional[str] = None
-
+    server_template_id: Optional[int] = None
 
 class ServerConfigurationInDB(ServerConfigurationBase):
     id: int

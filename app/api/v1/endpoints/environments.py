@@ -68,6 +68,9 @@ def update_environment(
     """
     ✏️ Met à jour un environnement existant.
     """
+    if environment_service.get_by_name(environment_update.name):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nom d’environnement déjà utilisé.")
+    
     updated = environment_service.update(environment_id, environment_update, updated_by_id=current_user.id)
     if not updated:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Environnement introuvable.")

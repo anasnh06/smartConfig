@@ -68,6 +68,8 @@ def update_server(
     """
     ✏️ Met à jour les infos et rôles du serveur.
     """
+    if server_service.get_by_name(server_update.name):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nom du serveur déjà utilisé.")
     updated = server_service.update(server_id, server_update, updated_by_id=current_user.id)
     if not updated:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Serveur introuvable.")
