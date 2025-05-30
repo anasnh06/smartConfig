@@ -21,7 +21,21 @@ class TemplateConfigurationService:
         return query.filter(TemplateConfiguration.id == tc_id).first()
 
     def list_all(self, skip: int = 0, limit: int = 100) -> List[TemplateConfiguration]:
-        return self.db.query(TemplateConfiguration).offset(skip).limit(limit).all()
+        """
+        📄 Liste paginée de toutes les associations Template-Configuration avec relations chargées.
+        """
+        return (
+            self.db.query(TemplateConfiguration)
+            .options(
+                joinedload(TemplateConfiguration.template),
+                joinedload(TemplateConfiguration.configuration),
+                joinedload(TemplateConfiguration.created_by_user),
+                joinedload(TemplateConfiguration.updated_by_user),
+            )
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
 
     def create(self, tc_in: TemplateConfigurationCreate, created_by_id: Optional[int] = None) -> TemplateConfiguration:
         tc = TemplateConfiguration(

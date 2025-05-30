@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     database_url: str = Field(..., env="DATABASE_URL") # obligatoire => levée d’erreur si absente du .env
     secret_key: str                # à mettre dans .env
     algorithm: str = "HS256"
-    access_token_expire_minutes: int = 30
+    access_token_expire_minutes: int = Field(..., env="ACCESS_TOKEN_EXPIRE_MINUTES")
 
     class Config:
         env_file = ".env"

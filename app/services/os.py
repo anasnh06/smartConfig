@@ -25,7 +25,22 @@ class OperatingSystemService:
         return self.db.query(OperatingSystem).filter(OperatingSystem.name == name).first()
 
     def list_all(self, skip: int = 0, limit: int = 100) -> List[OperatingSystem]:
-        return self.db.query(OperatingSystem).offset(skip).limit(limit).all()
+        """
+        📄 Liste paginée de tous les systèmes d'exploitation avec relations chargées.
+        """
+        return (
+            self.db.query(OperatingSystem)
+            .options(
+                joinedload(OperatingSystem.servers),
+                joinedload(OperatingSystem.configurations),
+                joinedload(OperatingSystem.templates),
+                joinedload(OperatingSystem.created_by_user),
+                joinedload(OperatingSystem.updated_by_user),
+            )
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
 
     def create(self, os_in: OperatingSystemCreate, created_by_id: Optional[int] = None) -> OperatingSystem:
         os = OperatingSystem(

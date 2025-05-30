@@ -28,7 +28,25 @@ class ServerService:
         return self.db.query(Server).filter(Server.name == name).first()
 
     def list_all(self, skip: int = 0, limit: int = 100) -> List[Server]:
-        return self.db.query(Server).offset(skip).limit(limit).all()
+        """
+        📄 Liste paginée de tous les serveurs avec relations chargées.
+        """
+        return (
+            self.db.query(Server)
+            .options(
+                joinedload(Server.operating_system),
+                joinedload(Server.environment),
+                joinedload(Server.project),
+                joinedload(Server.roles),
+                joinedload(Server.server_templates),
+                joinedload(Server.server_configurations),
+                joinedload(Server.created_by_user),
+                joinedload(Server.updated_by_user),
+            )
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
 
     def create(self, server_in: ServerCreate, created_by_id: Optional[int] = None) -> Server:
         server = Server(

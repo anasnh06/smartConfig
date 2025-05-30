@@ -28,7 +28,7 @@ def attach_configuration_to_template(
     return service.get_by_id(assoc.id, include_related=True)
 
 
-@router.get("/", response_model=List[TemplateConfigurationInDB], status_code=status.HTTP_200_OK)
+@router.get("/", response_model=List[TemplateConfigurationPublic], status_code=status.HTTP_200_OK)
 def list_template_configurations(
     skip: int = 0,
     limit: int = 100,

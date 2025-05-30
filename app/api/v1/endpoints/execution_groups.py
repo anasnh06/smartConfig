@@ -27,7 +27,7 @@ def create_execution_group(
     return service.get_by_id(group.id, include_related=True)
 
 
-@router.get("/", response_model=List[ExecutionGroupInDB], status_code=status.HTTP_200_OK)
+@router.get("/", response_model=List[ExecutionGroupPublic], status_code=status.HTTP_200_OK)
 def list_execution_groups(
     skip: int = 0,
     limit: int = 100,

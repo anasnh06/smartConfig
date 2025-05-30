@@ -32,9 +32,21 @@ class ConfigurationService:
 
     def list_all(self, skip: int = 0, limit: int = 100) -> List[Configuration]:
         """
-        📄 Liste paginée de toutes les configurations.
+        📄 Liste paginée de toutes les configurations, avec relations chargées.
         """
-        return self.db.query(Configuration).offset(skip).limit(limit).all()
+        return (
+            self.db.query(Configuration)
+            .options(
+                joinedload(Configuration.operating_systems),
+                joinedload(Configuration.configuration_servers),
+                joinedload(Configuration.configuration_templates),
+                joinedload(Configuration.created_by_user),
+                joinedload(Configuration.updated_by_user),
+            )
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
 
     def create(self, configuration_in: ConfigurationCreate, created_by_id: Optional[int] = None) -> Configuration:
         """

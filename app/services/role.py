@@ -23,8 +23,17 @@ class RoleService:
     def get_by_name(self, name: str) -> Optional[Role]:
         return self.db.query(Role).filter(Role.name == name).first()
 
-    def list_all(self, skip: int = 0, limit: int = 100) -> List[Role]:
-        return self.db.query(Role).offset(skip).limit(limit).all()
+    def list_all(self, skip: int = 0, limit: int = 100, include_related: bool = False) -> List[Role]:
+        query = self.db.query(Role)
+        if include_related:
+            query = query.options(
+                joinedload(Role.servers),
+                joinedload(Role.templates),
+                joinedload(Role.created_by_user),
+                joinedload(Role.updated_by_user),
+            )
+        return query.offset(skip).limit(limit).all()
+
 
     def create(self, role_in: RoleCreate, created_by_id: Optional[int] = None) -> Role:
         role = Role(

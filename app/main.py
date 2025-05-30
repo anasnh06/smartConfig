@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from app.api.v1.endpoints import users, auth, roles, os, environments, projects, servers, configurations, templates, template_configurations, server_templates, server_configurations, execution_groups, executions
 from app.core.config import settings
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title=settings.app_name, debug=True)
 
@@ -19,4 +20,13 @@ app.include_router(server_templates.router, prefix="/api/v1/server-templates", t
 app.include_router(server_configurations.router, prefix="/api/v1/server-configurations", tags=["Server Configurations"])
 app.include_router(execution_groups.router, prefix="/api/v1/execution-groups", tags=["Execution Groups"])
 app.include_router(executions.router, prefix="/api/v1/executions", tags=["Executions"])
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # 👈 Ajoute aussi ton domaine Vercel en prod
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 

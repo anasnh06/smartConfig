@@ -30,7 +30,7 @@ def create_server(
     return server_service.get_by_id(server.id, include_related=True)
 
 
-@router.get("/", response_model=List[ServerInDB], status_code=status.HTTP_200_OK)
+@router.get("/", response_model=List[ServerPublic], status_code=status.HTTP_200_OK)
 def list_servers(
     skip: int = 0,
     limit: int = 100,

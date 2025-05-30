@@ -26,7 +26,19 @@ class UserService:
         return self.db.query(User).filter(User.email == email).first()
 
     def list_all(self, skip: int = 0, limit: int = 100) -> List[User]:
-        return self.db.query(User).offset(skip).limit(limit).all()
+        """
+        📄 Liste paginée de tous les utilisateurs avec relations chargées.
+        """
+        return (
+            self.db.query(User)
+            .options(
+                joinedload(User.creator),
+                joinedload(User.updater)
+            )
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
 
     def create(self, user_in: UserCreate, created_by_id: Optional[int] = None) -> User:
         user = User(

@@ -26,7 +26,23 @@ class TemplateService:
         return self.db.query(Template).filter(Template.name == name).first()
 
     def list_all(self, skip: int = 0, limit: int = 100) -> List[Template]:
-        return self.db.query(Template).offset(skip).limit(limit).all()
+        """
+        📄 Liste paginée de tous les templates avec relations chargées.
+        """
+        return (
+            self.db.query(Template)
+            .options(
+                joinedload(Template.role),
+                joinedload(Template.operating_systems),
+                joinedload(Template.template_configurations),
+                joinedload(Template.template_servers),
+                joinedload(Template.created_by_user),
+                joinedload(Template.updated_by_user),
+            )
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
 
     def create(self, template_in: TemplateCreate, created_by_id: Optional[int] = None) -> Template:
         template = Template(

@@ -30,7 +30,7 @@ def create_environment(
     return environment_service.get_by_id(environment.id, include_related=True)
 
 
-@router.get("/", response_model=List[EnvironmentInDB], status_code=status.HTTP_200_OK)
+@router.get("/", response_model=List[EnvironmentPublic], status_code=status.HTTP_200_OK)
 def list_environments(
     skip: int = 0,
     limit: int = 100,

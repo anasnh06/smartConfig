@@ -27,7 +27,7 @@ def create_os(
     return os_service.get_by_id(os.id, include_related=True)
 
 
-@router.get("/", response_model=List[OperatingSystemInDB], status_code=status.HTTP_200_OK)
+@router.get("/", response_model=List[OperatingSystemPublic], status_code=status.HTTP_200_OK)
 def list_os(
     skip: int = 0,
     limit: int = 100,

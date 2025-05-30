@@ -22,7 +22,22 @@ class ServerTemplateService:
         return query.filter(ServerTemplate.id == st_id).first()
 
     def list_all(self, skip: int = 0, limit: int = 100) -> List[ServerTemplate]:
-        return self.db.query(ServerTemplate).offset(skip).limit(limit).all()
+        """
+        📄 Liste paginée de toutes les liaisons serveur-template avec relations chargées.
+        """
+        return (
+            self.db.query(ServerTemplate)
+            .options(
+                joinedload(ServerTemplate.server),
+                joinedload(ServerTemplate.template),
+                joinedload(ServerTemplate.server_configurations),
+                joinedload(ServerTemplate.created_by_user),
+                joinedload(ServerTemplate.updated_by_user),
+            )
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
 
     def create(self, st_in: ServerTemplateCreate, created_by_id: Optional[int] = None) -> ServerTemplate:
         st = ServerTemplate(

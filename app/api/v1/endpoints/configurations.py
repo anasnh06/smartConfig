@@ -27,7 +27,7 @@ def create_configuration(
     return configuration_service.get_by_id(configuration.id, include_related=True)
 
 
-@router.get("/", response_model=List[ConfigurationInDB], status_code=status.HTTP_200_OK)
+@router.get("/", response_model=List[ConfigurationPublic], status_code=status.HTTP_200_OK)
 def list_configurations(
     skip: int = 0,
     limit: int = 100,

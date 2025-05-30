@@ -22,8 +22,16 @@ class EnvironmentService:
     def get_by_name(self, name: str) -> Optional[Environment]:
         return self.db.query(Environment).filter(Environment.name == name).first()
 
-    def list_all(self, skip: int = 0, limit: int = 100) -> List[Environment]:
-        return self.db.query(Environment).offset(skip).limit(limit).all()
+    def list_all(self, skip: int = 0, limit: int = 100, include_related: bool = False) -> List[Environment]:
+        query = self.db.query(Environment)
+        if include_related:
+            query = query.options(
+                joinedload(Environment.servers),
+                joinedload(Environment.created_by_user),
+                joinedload(Environment.updated_by_user)
+            )
+        return query.offset(skip).limit(limit).all()
+    
 
     def create(self, environment_in: EnvironmentCreate, created_by_id: Optional[int] = None) -> Environment:
         environment = Environment(

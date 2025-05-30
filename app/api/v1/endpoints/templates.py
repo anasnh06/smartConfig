@@ -27,7 +27,7 @@ def create_template(
     return template_service.get_by_id(template.id, include_related=True)
 
 
-@router.get("/", response_model=List[TemplateInDB], status_code=status.HTTP_200_OK)
+@router.get("/", response_model=List[TemplatePublic], status_code=status.HTTP_200_OK)
 def list_templates(
     skip: int = 0,
     limit: int = 100,

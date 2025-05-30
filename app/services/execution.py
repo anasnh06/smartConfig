@@ -20,7 +20,20 @@ class ExecutionService:
         return query.filter(Execution.id == execution_id).first()
 
     def list_all(self, skip: int = 0, limit: int = 100) -> List[Execution]:
-        return self.db.query(Execution).offset(skip).limit(limit).all()
+        """
+        📄 Liste paginée de toutes les exécutions, avec relations chargées.
+        """
+        return (
+            self.db.query(Execution)
+            .options(
+                joinedload(Execution.execution_groups),
+                joinedload(Execution.created_by_user),
+                joinedload(Execution.updated_by_user),
+            )
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
 
     def create(self, execution_in: ExecutionCreate, created_by_id: Optional[int] = None) -> Execution:
         execution = Execution(

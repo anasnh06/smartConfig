@@ -21,8 +21,15 @@ class ProjectService:
     def get_by_name(self, name: str) -> Optional[Project]:
         return self.db.query(Project).filter(Project.name == name).first()
 
-    def list_all(self, skip: int = 0, limit: int = 100) -> List[Project]:
-        return self.db.query(Project).offset(skip).limit(limit).all()
+    def list_all(self, skip: int = 0, limit: int = 100, include_related: bool = False) -> List[Project]:
+        query = self.db.query(Project)
+        if include_related:
+            query = query.options(
+                joinedload(Project.servers),
+                joinedload(Project.created_by_user),
+                joinedload(Project.updated_by_user),
+            )
+        return query.offset(skip).limit(limit).all()
 
     def create(self, project_in: ProjectCreate, created_by_id: Optional[int] = None) -> Project:
         project = Project(

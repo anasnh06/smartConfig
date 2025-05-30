@@ -21,7 +21,21 @@ class ExecutionGroupService:
         return query.filter(ExecutionGroup.id == eg_id).first()
 
     def list_all(self, skip: int = 0, limit: int = 100) -> List[ExecutionGroup]:
-        return self.db.query(ExecutionGroup).offset(skip).limit(limit).all()
+        """
+        📄 Liste paginée de tous les groupes d'exécution, avec relations chargées.
+        """
+        return (
+            self.db.query(ExecutionGroup)
+            .options(
+                joinedload(ExecutionGroup.execution),
+                joinedload(ExecutionGroup.server_configurations),
+                joinedload(ExecutionGroup.created_by_user),
+                joinedload(ExecutionGroup.updated_by_user),
+            )
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
 
     def create(self, eg_in: ExecutionGroupCreate, created_by_id: Optional[int] = None) -> ExecutionGroup:
         eg = ExecutionGroup(

@@ -23,7 +23,23 @@ class ServerConfigurationService:
         return query.filter(ServerConfiguration.id == sc_id).first()
 
     def list_all(self, skip: int = 0, limit: int = 100) -> List[ServerConfiguration]:
-        return self.db.query(ServerConfiguration).offset(skip).limit(limit).all()
+        """
+        📄 Liste paginée de toutes les liaisons serveur-configuration avec relations chargées.
+        """
+        return (
+            self.db.query(ServerConfiguration)
+            .options(
+                joinedload(ServerConfiguration.server),
+                joinedload(ServerConfiguration.configuration),
+                joinedload(ServerConfiguration.server_template),
+                joinedload(ServerConfiguration.execution_group),
+                joinedload(ServerConfiguration.created_by_user),
+                joinedload(ServerConfiguration.updated_by_user),
+            )
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
 
     def create(self, sc_in: ServerConfigurationCreate, created_by_id: Optional[int] = None) -> ServerConfiguration:
         sc = ServerConfiguration(

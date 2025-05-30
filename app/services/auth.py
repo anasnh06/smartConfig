@@ -22,10 +22,11 @@ class AuthService:
             return None
         return user
 
-    def generate_token(self, user: User) -> str:
-        payload = {"sub": user.username}
-        expires = timedelta(minutes=settings.access_token_expire_minutes)
-        return create_access_token(payload, expires_delta=expires)
+    def generate_token(self, user: User, expires_delta: Optional[timedelta] = None) -> str:
+        return create_access_token(
+            data={"sub": user.username},  # ou user.email selon ton projet
+            expires_delta=expires_delta or timedelta(minutes=settings.access_token_expire_minutes)
+        )
 
     def ensure_user_is_active(self, user: User) -> None:
         if not user.is_active:
