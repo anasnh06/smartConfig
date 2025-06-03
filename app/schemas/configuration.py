@@ -14,6 +14,7 @@ if TYPE_CHECKING:
 class ConfigurationShort(BaseModel):
     id: int
     name: str
+    operating_systems: List["OperatingSystemShort"] = []
 
     class Config:
         from_attributes = True

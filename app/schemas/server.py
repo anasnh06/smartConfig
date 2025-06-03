@@ -18,6 +18,7 @@ class ServerShort(BaseModel):
     id: int
     name: str
     ip_address: IPvAnyAddress
+    operating_system: "OperatingSystemShort"
 
     class Config:
         from_attributes = True

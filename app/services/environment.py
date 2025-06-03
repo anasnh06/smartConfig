@@ -32,6 +32,12 @@ class EnvironmentService:
             )
         return query.offset(skip).limit(limit).all()
     
+    def list_short(self) -> List[Environment]:
+        """
+        📋 Liste brute de tous les environnements (sans relations).
+        """
+        return self.db.query(Environment).all()    
+    
 
     def create(self, environment_in: EnvironmentCreate, created_by_id: Optional[int] = None) -> Environment:
         environment = Environment(

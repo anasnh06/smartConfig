@@ -33,6 +33,12 @@ class RoleService:
                 joinedload(Role.updated_by_user),
             )
         return query.offset(skip).limit(limit).all()
+    
+    def list_short(self) -> List[Role]:
+        """
+        📋 Liste brute de tous les rôles (sans relations).
+        """
+        return self.db.query(Role).all()    
 
 
     def create(self, role_in: RoleCreate, created_by_id: Optional[int] = None) -> Role:

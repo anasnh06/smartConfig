@@ -6,6 +6,7 @@ from app.schemas import (
     ConfigurationUpdate,
     ConfigurationPublic,
     ConfigurationInDB,
+    ConfigurationShort,
 )
 from app.dependencies import get_configuration_service, get_current_user
 from app.services import ConfigurationService
@@ -38,6 +39,15 @@ def list_configurations(
     📄 Liste paginée des configurations.
     """
     return configuration_service.list_all(skip=skip, limit=limit)
+@router.get("/short", response_model=List[ConfigurationShort], status_code=status.HTTP_200_OK)
+def list_configurations_short(
+    configuration_service: ConfigurationService = Depends(get_configuration_service),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    📋 Liste simplifiée des configurations (id + nom, pour dropdowns).
+    """
+    return configuration_service.list_short()
 
 
 @router.get("/{configuration_id}", response_model=ConfigurationPublic, status_code=status.HTTP_200_OK)

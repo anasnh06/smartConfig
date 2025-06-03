@@ -41,7 +41,13 @@ class OperatingSystemService:
             .limit(limit)
             .all()
         )
-
+    
+    def list_short(self) -> List[OperatingSystem]:
+        """
+        📋 Liste brute de tous les systèmes d'exploitation (sans relations).
+        """
+        return self.db.query(OperatingSystem).all()
+    
     def create(self, os_in: OperatingSystemCreate, created_by_id: Optional[int] = None) -> OperatingSystem:
         os = OperatingSystem(
             name=os_in.name,

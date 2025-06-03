@@ -43,6 +43,16 @@ class TemplateService:
             .limit(limit)
             .all()
         )
+    
+    def list_short(self) -> List[Template]:
+        """
+        📋 Liste brute de tous les templates (sans relations).
+        """
+        return (
+        self.db.query(Template)
+        .options(joinedload(Template.operating_systems))
+        .all()
+    )
 
     def create(self, template_in: TemplateCreate, created_by_id: Optional[int] = None) -> Template:
         template = Template(

@@ -6,6 +6,7 @@ from app.schemas import (
     EnvironmentUpdate,
     EnvironmentPublic,
     EnvironmentInDB,
+    EnvironmentShort,  # added
 )
 from app.dependencies import get_environment_service, get_current_user
 from app.services import EnvironmentService
@@ -41,6 +42,17 @@ def list_environments(
     📄 Liste paginée des environnements.
     """
     return environment_service.list_all(skip=skip, limit=limit)
+
+
+@router.get("/short", response_model=List[EnvironmentShort], status_code=status.HTTP_200_OK)
+def list_environments_short(
+    environment_service: EnvironmentService = Depends(get_environment_service),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    📋 Liste simplifiée des environnements (id + nom, pour dropdowns).
+    """
+    return environment_service.list_short()
 
 
 @router.get("/{environment_id}", response_model=EnvironmentPublic, status_code=status.HTTP_200_OK)

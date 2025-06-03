@@ -6,6 +6,7 @@ from app.schemas import (
     ServerUpdate,
     ServerPublic,
     ServerInDB,
+    ServerShort,  # added
 )
 from app.dependencies import get_server_service, get_current_user
 from app.services import ServerService
@@ -41,6 +42,17 @@ def list_servers(
     📄 Liste paginée des serveurs.
     """
     return server_service.list_all(skip=skip, limit=limit)
+
+
+@router.get("/short", response_model=List[ServerShort], status_code=status.HTTP_200_OK)
+def list_servers_short(
+    server_service: ServerService = Depends(get_server_service),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    📋 Liste simplifiée des serveurs (id + nom, pour dropdowns).
+    """
+    return server_service.list_short()
 
 
 @router.get("/{server_id}", response_model=ServerPublic, status_code=status.HTTP_200_OK)

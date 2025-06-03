@@ -31,6 +31,12 @@ class ProjectService:
             )
         return query.offset(skip).limit(limit).all()
 
+    def list_short(self) -> List[Project]:
+        """
+        📋 Liste brute de tous les projets (sans relations).
+        """
+        return self.db.query(Project).all()
+
     def create(self, project_in: ProjectCreate, created_by_id: Optional[int] = None) -> Project:
         project = Project(
             name=project_in.name,

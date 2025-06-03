@@ -26,3 +26,13 @@ ServerConfigurationPublic.model_rebuild()
 TemplateConfigurationPublic.model_rebuild()
 ExecutionGroupPublic.model_rebuild()
 ExecutionPublic.model_rebuild()
+
+
+
+ConfigurationShort.model_rebuild()
+OperatingSystemShort.model_rebuild()
+ServerShort.model_rebuild()
+TemplateShort.model_rebuild()
+ProjectShort.model_rebuild()
+EnvironmentShort.model_rebuild()
+RoleShort.model_rebuild()

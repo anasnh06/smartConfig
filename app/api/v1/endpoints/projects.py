@@ -6,6 +6,7 @@ from app.schemas import (
     ProjectUpdate,
     ProjectPublic,
     ProjectInDB,
+    ProjectShort,  # added
 )
 from app.dependencies import get_project_service, get_current_user
 from app.services import ProjectService
@@ -41,6 +42,17 @@ def list_projects(
     📄 Liste paginée des projets.
     """
     return project_service.list_all(skip=skip, limit=limit)
+
+
+@router.get("/short", response_model=List[ProjectShort], status_code=status.HTTP_200_OK)
+def list_projects_short(
+    project_service: ProjectService = Depends(get_project_service),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    📋 Liste simplifiée des projets (id + nom, pour dropdowns).
+    """
+    return project_service.list_short()
 
 
 @router.get("/{project_id}", response_model=ProjectPublic, status_code=status.HTTP_200_OK)

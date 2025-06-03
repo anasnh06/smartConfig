@@ -47,6 +47,16 @@ class ConfigurationService:
             .limit(limit)
             .all()
         )
+    
+    def list_short(self) -> List[Configuration]:
+        """
+        📋 Liste brute de toutes les configurations (sans relations).
+        """
+        return (
+        self.db.query(Configuration)
+        .options(joinedload(Configuration.operating_systems))
+        .all()
+    )
 
     def create(self, configuration_in: ConfigurationCreate, created_by_id: Optional[int] = None) -> Configuration:
         """

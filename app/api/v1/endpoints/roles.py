@@ -6,6 +6,7 @@ from app.schemas import (
     RoleUpdate,
     RolePublic,
     RoleInDB,
+    RoleShort,  # added
 )
 from app.dependencies import get_role_service, get_current_user
 from app.models import User
@@ -41,6 +42,17 @@ def list_roles(
     📄 Liste paginée des rôles.
     """
     return role_service.list_all(skip=skip, limit=limit)
+
+
+@router.get("/short", response_model=List[RoleShort], status_code=status.HTTP_200_OK)
+def list_roles_short(
+    role_service: RoleService = Depends(get_role_service),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    📋 Liste simplifiée des rôles (id + nom, pour dropdowns).
+    """
+    return role_service.list_short()
 
 
 @router.get("/{role_id}", response_model=RolePublic, status_code=status.HTTP_200_OK)

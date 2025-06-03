@@ -6,6 +6,7 @@ from app.schemas import (
     TemplateUpdate,
     TemplatePublic,
     TemplateInDB,
+    TemplateShort,  # added
 )
 from app.dependencies import get_template_service, get_current_user
 from app.services import TemplateService
@@ -38,6 +39,17 @@ def list_templates(
     📄 Liste paginée des templates.
     """
     return template_service.list_all(skip=skip, limit=limit)
+
+
+@router.get("/short", response_model=List[TemplateShort], status_code=status.HTTP_200_OK)
+def list_templates_short(
+    template_service: TemplateService = Depends(get_template_service),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    📋 Liste simplifiée des templates (id + nom, pour dropdowns).
+    """
+    return template_service.list_short()
 
 
 @router.get("/{template_id}", response_model=TemplatePublic, status_code=status.HTTP_200_OK)

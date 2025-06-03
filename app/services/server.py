@@ -47,7 +47,16 @@ class ServerService:
             .limit(limit)
             .all()
         )
-
+    
+    def list_short(self) -> List[Server]:
+        """
+        📋 Liste brute de tous les serveurs (sans relations).
+        """
+        return (
+        self.db.query(Server)
+        .options(joinedload(Server.operating_system))
+        .all()
+    )
     def create(self, server_in: ServerCreate, created_by_id: Optional[int] = None) -> Server:
         server = Server(
             name=server_in.name,
@@ -78,12 +87,13 @@ class ServerService:
 
         update_data = server_in.model_dump(exclude_unset=True)
         for field, value in update_data.items():
-            if field == "ip_address":
-                value = str(value)
-            elif field == "role_ids":
+            if field == "role_ids":
                 roles = self.db.query(Role).filter(Role.id.in_(value)).all()
                 server.roles = roles
             else:
+                # 🔐 Correction ici : convertir IPvAnyAddress en str
+                if field == "ip_address" and not isinstance(value, str):
+                    value = str(value)
                 setattr(server, field, value)
 
         server.updated_by = updated_by_id

@@ -6,6 +6,7 @@ from app.schemas import (
     OperatingSystemUpdate,
     OperatingSystemPublic,
     OperatingSystemInDB,
+    OperatingSystemShort,  # added
 )
 from app.dependencies import get_operating_system_service, get_current_user
 from app.services import OperatingSystemService
@@ -38,6 +39,17 @@ def list_os(
     📄 Liste paginée des systèmes d'exploitation.
     """
     return os_service.list_all(skip=skip, limit=limit)
+
+
+@router.get("/short", response_model=List[OperatingSystemShort], status_code=status.HTTP_200_OK)
+def list_os_short(
+    os_service: OperatingSystemService = Depends(get_operating_system_service),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    📋 Liste simplifiée des systèmes d'exploitation (id + nom, pour dropdowns).
+    """
+    return os_service.list_short()
 
 
 @router.get("/{os_id}", response_model=OperatingSystemPublic, status_code=status.HTTP_200_OK)
