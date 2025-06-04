@@ -15,6 +15,8 @@ if TYPE_CHECKING:
 class TemplateShort(BaseModel):
     id: int
     name: str
+
+    role: Optional["RoleShort"] = None
     operating_systems: List["OperatingSystemShort"] = []
 
     class Config:
