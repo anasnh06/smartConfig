@@ -99,3 +99,18 @@ def bulk_attach_configurations(
         items=payload.configurations,
         created_by_id=current_user.id
     )
+
+@router.put("/replace", response_model=List[TemplateConfigurationPublic], status_code=status.HTTP_200_OK)
+def replace_template_configurations(
+    payload: BulkAttachToTemplate = Body(...),
+    service: TemplateConfigurationService = Depends(get_template_configuration_service),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    🔁 Remplace toutes les configurations d’un template par une nouvelle liste.
+    """
+    return service.replace_all_for_template(
+        template_id=payload.template_id,
+        items=payload.configurations,
+        user_id=current_user.id
+    )

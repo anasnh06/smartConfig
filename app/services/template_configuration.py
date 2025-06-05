@@ -100,4 +100,33 @@ class TemplateConfigurationService:
             self.db.refresh(tc)
 
         return result
-   
+
+
+    def replace_all_for_template(
+        self,
+        template_id: int,
+        items: List[BulkAttachConfigurationItem],
+        user_id: Optional[int] = None
+    ) -> List[TemplateConfiguration]:
+        # Supprimer toutes les liaisons existantes
+        self.db.query(TemplateConfiguration).filter(
+            TemplateConfiguration.template_id == template_id
+        ).delete()
+
+        # Ajouter les nouvelles
+        result = []
+        for item in items:
+            tc = TemplateConfiguration(
+                template_id=template_id,
+                configuration_id=item.configuration_id,
+                order=item.order,
+                comment=item.comment,
+                created_by=user_id,
+            )
+            self.db.add(tc)
+            result.append(tc)
+
+        self.db.commit()
+        for tc in result:
+            self.db.refresh(tc)
+        return result
