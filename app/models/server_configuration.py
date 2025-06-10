@@ -12,7 +12,9 @@ class ServerConfiguration(Base):
     # Statut d'exécution
     status = Column(String(20), default="pending")          # pending / running / success / failed
     return_code = Column(Integer)
-    output = Column(String)                                 # stdout/stderr concaténés ou JSON compacté
+    stdout = Column(Text, nullable=True)
+    stderr = Column(Text, nullable=True)
+    log_path = Column(String(255), nullable=True)                                 # stdout/stderr concaténés ou JSON compacté
     started_at = Column(DateTime(timezone=True))
     finished_at = Column(DateTime(timezone=True))
     source = Column(String(20))     # manual / template / custom

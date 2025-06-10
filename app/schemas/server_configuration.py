@@ -45,7 +45,9 @@ class ServerConfigurationShortForConfiguration(BaseModel):
 class ServerConfigurationBase(BaseModel):
     status: Optional[str] = Field(default="pending", description="Statut d’exécution (pending, running, success, failed)")
     return_code: Optional[int] = Field(None, description="Code de retour de la commande")
-    output: Optional[str] = Field(None, description="Sortie de la commande exécutée (stdout/stderr)")
+    stdout: Optional[str] = Field(None, description="Sortie standard de la commande")
+    stderr: Optional[str] = Field(None, description="Sortie d'erreur de la commande")
+    log_path: Optional[str] = Field(None, description="Chemin du fichier de log si applicable")
     started_at: Optional[datetime] = None
     finished_at: Optional[datetime] = None
     source: Optional[str] = Field(None, description="Origine de la configuration (manual/template/custom)")
@@ -62,7 +64,9 @@ class ServerConfigurationCreate(ServerConfigurationBase):
 class ServerConfigurationUpdate(BaseModel):
     status: Optional[str] = None
     return_code: Optional[int] = None
-    output: Optional[str] = None
+    stdout: Optional[str] = None
+    stderr: Optional[str] = None
+    log_path: Optional[str] = None
     started_at: Optional[datetime] = None
     finished_at: Optional[datetime] = None
     source: Optional[str] = None
@@ -88,7 +92,9 @@ class ServerConfigurationPublic(BaseModel):
     id: int
     status: Optional[str] = None
     return_code: Optional[int] = None
-    output: Optional[str] = None
+    stdout: Optional[str] = None
+    stderr: Optional[str] = None
+    log_path: Optional[str] = None
     started_at: Optional[datetime] = None
     finished_at: Optional[datetime] = None
     source: Optional[str] = None
