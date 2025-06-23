@@ -8,7 +8,7 @@ from app.models.template_configuration import TemplateConfiguration
 
 
 def generate_playbook(
-    elements: list[dict[str, Any]],  # Chaque dict contient: type, id, order (optionnel), name (optionnel), command, description
+    elements: list[dict[str, Any]],
     configs: list[Configuration],
     templates: list[Template],
     template_confs: list[TemplateConfiguration],
@@ -17,22 +17,21 @@ def generate_playbook(
     group_id: Optional[int] = None,
 ) -> None:
     """
-    Génère un playbook Ansible avec les éléments triés (config, template, manuel).
-    - Ajoute les tags depuis les descriptions (config, manuel)
-    - Gère les noms explicites avec fallback
-    - Inclut les commentaires TemplateConfiguration dans le nom
+    Génère un playbook Ansible complet et lisible.
+    - Affichage explicite des IDs et noms
+    - Nommage clair pour config, template→config, manuel
     """
 
     tasks = []
 
-    # Index pour accès rapide
+    # Index rapides
     config_map = {c.id: c for c in configs}
     template_map = {t.id: t for t in templates}
     template_conf_map: dict[int, list[TemplateConfiguration]] = {}
     for tc in template_confs:
         template_conf_map.setdefault(tc.template_id, []).append(tc)
 
-    # Trier tous les éléments principaux
+    # Tri des éléments par `order`
     sorted_elements = sorted(elements, key=lambda e: (e.get("order") is None, e.get("order")))
 
     for element in sorted_elements:
@@ -40,21 +39,21 @@ def generate_playbook(
         el_id = element.get("id")
 
         if el_type == "configuration":
-            if el_id not in config_map:
+            config = config_map.get(el_id)
+            if not config:
                 raise ValueError(f"❌ Configuration ID {el_id} introuvable.")
-            config = config_map[el_id]
             task = {
-                "name": f"[config:{config.id}] {config.name}",
+                "name": f"[configuration:{config.id}] {config.name}",
                 "shell": config.command,
             }
-            if getattr(config, "description", None):
+            if config.description:
                 task["tags"] = [config.description]
             tasks.append(task)
 
         elif el_type == "template":
-            if el_id not in template_map:
+            template = template_map.get(el_id)
+            if not template:
                 raise ValueError(f"❌ Template ID {el_id} introuvable.")
-            template = template_map[el_id]
             template_tasks = template_conf_map.get(template.id, [])
             template_tasks_sorted = sorted(template_tasks, key=lambda c: (c.order is None, c.order))
 
@@ -62,14 +61,17 @@ def generate_playbook(
                 config = config_map.get(tc.configuration_id)
                 if not config:
                     raise ValueError(f"❌ Config ID {tc.configuration_id} introuvable dans Template {template.id}.")
-                task_name = f"[template:{template.id}] {config.name}"
+                task_name = (
+                    f"[template:{template.id}] {template.name} → "
+                    f"[configuration:{config.id}] {config.name}"
+                )
                 if tc.comment:
                     task_name += f" - {tc.comment}"
                 task = {
                     "name": task_name,
                     "shell": config.command,
                 }
-                if getattr(config, "description", None):
+                if config.description:
                     task["tags"] = [config.description]
                 tasks.append(task)
 
@@ -90,7 +92,12 @@ def generate_playbook(
             raise ValueError(f"❌ Type d'élément inconnu : {el_type}")
 
     # Nom global du playbook
-    playbook_title = group_name.strip() if group_name else f"Group {group_id if group_id is not None else 'Unknown'}"
+    if group_id is not None:
+        playbook_title = f"Group {group_id}"
+        if group_name:
+            playbook_title += f" - {group_name.strip()}"
+    else:
+        playbook_title = group_name.strip() if group_name else "Unnamed Group"
 
     playbook = [
         {
@@ -101,6 +108,6 @@ def generate_playbook(
         }
     ]
 
-    # Écriture fichier
+    # Écriture du fichier YAML
     with open(playbook_path, "w") as f:
         yaml.dump(playbook, f, sort_keys=False)

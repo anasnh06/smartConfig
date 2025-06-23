@@ -23,6 +23,9 @@ class ExecutionGroup(Base):
     created_by_user = relationship("User", foreign_keys=[created_by], back_populates="execution_groups_created")
     updated_by_user = relationship("User", foreign_keys=[updated_by], back_populates="execution_groups_updated")
 
+    replayed_from_id = Column(Integer, ForeignKey("execution_groups.id"), nullable=True)
+    replayed_from = relationship("ExecutionGroup", remote_side=[id])
+
     execution = relationship(
         "Execution",
         foreign_keys=[execution_id],

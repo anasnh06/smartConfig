@@ -14,17 +14,17 @@ class ServerConfiguration(Base):
     return_code = Column(Integer)
     stdout = Column(Text, nullable=True)
     stderr = Column(Text, nullable=True)
-    log_path = Column(String(255), nullable=True)                                 # stdout/stderr concaténés ou JSON compacté
+    log_path = Column(String(255), nullable=True)   # tous pour ansible en utilisant paths       
     started_at = Column(DateTime(timezone=True))
     finished_at = Column(DateTime(timezone=True))
-    source = Column(String(20))     # manual / template / custom
+    source = Column(String(20))     # configuration / template / manual
 
     # Liens métier
     server_id            = Column(ForeignKey("servers.id", ondelete="CASCADE"), nullable=False)
     execution_group_id   = Column(ForeignKey("execution_groups.id", ondelete="CASCADE"), nullable=False)
-    configuration_id     = Column(ForeignKey("configurations.id", ondelete="SET NULL"))
-    server_template_id   = Column(ForeignKey("server_templates.id", ondelete="SET NULL"))
-    custom_command       = Column(String, nullable=True)         # si commande libre
+    configuration_id     = Column(ForeignKey("configurations.id", ondelete="SET NULL")) # pas remplis dans ca manual
+    server_template_id   = Column(ForeignKey("server_templates.id", ondelete="SET NULL")) # si viens de template
+    custom_command       = Column(String, nullable=True)         # si source commande manual  
 
     
 
@@ -42,3 +42,7 @@ class ServerConfiguration(Base):
 
     created_by_user = relationship("User", foreign_keys=[created_by], back_populates="servers_configurations_created")
     updated_by_user = relationship("User", foreign_keys=[updated_by], back_populates="servers_configurations_updated")
+
+    replayed_from_id = Column(Integer, ForeignKey("server_configurations.id"), nullable=True)
+    replayed_from = relationship("ServerConfiguration", remote_side=[id])
+

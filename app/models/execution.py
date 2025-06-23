@@ -23,6 +23,10 @@ class Execution(Base):
     created_by_user = relationship("User", foreign_keys=[created_by], back_populates="executions_created")
     updated_by_user = relationship("User", foreign_keys=[updated_by], back_populates="executions_updated")
 
+    replayed_from_id = Column(Integer, ForeignKey("executions.id"), nullable=True)
+    replayed_from = relationship("Execution", remote_side=[id])
+
+
     # Relations
     execution_groups = relationship(
         "ExecutionGroup",
