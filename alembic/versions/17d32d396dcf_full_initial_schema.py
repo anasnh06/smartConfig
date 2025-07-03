@@ -1,8 +1,8 @@
 """full initial schema
 
-Revision ID: 855fe2d8d393
+Revision ID: 17d32d396dcf
 Revises: 
-Create Date: 2025-06-10 16:44:39.009130
+Create Date: 2025-07-02 10:09:36.931486
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '855fe2d8d393'
+revision: str = '17d32d396dcf'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -185,7 +185,6 @@ def upgrade() -> None:
     )
     op.create_table('server_templates',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('context', sa.String(length=255), nullable=True),
     sa.Column('status', sa.String(length=20), nullable=True),
     sa.Column('server_id', sa.Integer(), nullable=False),
     sa.Column('template_id', sa.Integer(), nullable=False),

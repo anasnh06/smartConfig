@@ -39,6 +39,12 @@ class ServerTemplateService:
             .all()
         )
 
+    def list_short(self) -> List[ServerTemplate]:
+        """
+        📋 Liste brute de toutes les liaisons serveur-template (sans relations).
+        """
+        return self.db.query(ServerTemplate).all()
+
     def create(self, st_in: ServerTemplateCreate, created_by_id: Optional[int] = None) -> ServerTemplate:
         st = ServerTemplate(
             server_id=st_in.server_id,

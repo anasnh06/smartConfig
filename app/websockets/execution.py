@@ -1,9 +1,9 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from websockets.manager import manager
+from .manager import manager
 
 router = APIRouter()
 
-@router.websocket("/execution/{execution_id}")
+@router.websocket("/executions/{execution_id}")
 async def websocket_execution(websocket: WebSocket, execution_id: int):
     """
     📱 WebSocket endpoint permettant aux clients de s'abonner à une exécution pour recevoir les mises à jour en temps réel.

@@ -34,6 +34,7 @@ class ExecutionUpdate(BaseModel):
     status: Optional[str] = None
     started_at: Optional[datetime] = None
     finished_at: Optional[datetime] = None
+    
 
 
 class ExecutionInDB(ExecutionBase):

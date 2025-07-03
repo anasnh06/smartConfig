@@ -138,3 +138,30 @@ def get_group_status(
         "started_at": group.started_at,
         "finished_at": group.finished_at
     }
+
+@router.post("/launch/full", status_code=status.HTTP_201_CREATED)
+async def launch_full_execution(
+    data: dict,  # contient title et groups_data
+    service: ExecutionRunnerService = Depends(get_execution_runner_service),
+    current_user: User = Depends(get_current_user),
+):
+    title = data.get("title")
+    groups_data = data.get("groups", [])
+
+    if not groups_data:
+        raise HTTPException(status_code=400, detail="Au moins un groupe requis")
+
+    # Validation : chaque groupe doit avoir au moins 1 serveur et 1 élément
+    for idx, group in enumerate(groups_data):
+        if not group.get("servers"):
+            raise HTTPException(status_code=400, detail=f"Groupe {idx+1} sans serveurs")
+        if not group.get("elements"):
+            raise HTTPException(status_code=400, detail=f"Groupe {idx+1} sans éléments")
+
+    # ⚙️ Appel du service complet
+    execution = await service.create_and_launch_execution(
+        title=title,
+        groups_data=groups_data,
+        created_by=current_user.id,
+    )
+    return execution

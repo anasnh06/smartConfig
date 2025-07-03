@@ -24,8 +24,18 @@ class ServerConfigurationShortForExecution(BaseModel):
     id: int
     status: Optional[str] = None
     return_code: Optional[int] = None
-    configuration: Optional["ConfigurationShort"] = None
+    stdout: Optional[str] = None
+    stderr: Optional[str] = None
+    source: Optional[str] = None
+    custom_command: Optional[str] = None
+    started_at: Optional[datetime] = None
+    finished_at: Optional[datetime] = None
+
     server: "ServerShort"
+    configuration: Optional["ConfigurationShort"] = None
+    server_template: Optional["ServerTemplateShort"] = None
+    created_by_user: Optional["UserShort"] = None
+     
 
     class Config:
         from_attributes = True
@@ -59,6 +69,7 @@ class ServerConfigurationCreate(ServerConfigurationBase):
     execution_group_id: int
     configuration_id: Optional[int] = None
     server_template_id: Optional[int] = None
+    
 
 
 class ServerConfigurationUpdate(BaseModel):
@@ -71,7 +82,11 @@ class ServerConfigurationUpdate(BaseModel):
     finished_at: Optional[datetime] = None
     source: Optional[str] = None
     custom_command: Optional[str] = None
+    server_id: Optional[int] = None
+    execution_group_id: Optional[int] = None
+    configuration_id: Optional[int] = None
     server_template_id: Optional[int] = None
+   
 
 class ServerConfigurationInDB(ServerConfigurationBase):
     id: int
@@ -108,6 +123,7 @@ class ServerConfigurationPublic(BaseModel):
     execution_group: "ExecutionGroupShort"
     configuration: Optional["ConfigurationShort"] = None
     server_template: Optional["ServerTemplateShort"] = None
+
 
     class Config:
         from_attributes = True

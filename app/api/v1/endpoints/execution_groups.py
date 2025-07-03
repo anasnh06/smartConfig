@@ -6,6 +6,7 @@ from app.schemas import (
     ExecutionGroupUpdate,
     ExecutionGroupPublic,
     ExecutionGroupInDB,
+    ExecutionGroupShort,  # ajouté
 )
 from app.dependencies import get_current_user, get_execution_group_service
 from app.services import ExecutionGroupService
@@ -38,6 +39,17 @@ def list_execution_groups(
     📄 Liste paginée des groupes d'exécution.
     """
     return service.list_all(skip=skip, limit=limit)
+
+
+@router.get("/short", response_model=List[ExecutionGroupShort], status_code=status.HTTP_200_OK)
+def list_execution_groups_short(
+    service: ExecutionGroupService = Depends(get_execution_group_service),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    📋 Liste simplifiée des groupes d'exécution (id + nom + statut, pour dropdowns).
+    """
+    return service.list_short()
 
 
 @router.get("/{execution_group_id}", response_model=ExecutionGroupPublic, status_code=status.HTTP_200_OK)

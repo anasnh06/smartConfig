@@ -37,6 +37,12 @@ class ExecutionGroupService:
             .all()
         )
 
+    def list_short(self) -> List[ExecutionGroup]:
+        """
+        📋 Liste brute de tous les groupes d'exécution (sans relations).
+        """
+        return self.db.query(ExecutionGroup).all()
+
     def create(self, eg_in: ExecutionGroupCreate, created_by_id: Optional[int] = None) -> ExecutionGroup:
         eg = ExecutionGroup(
             name=eg_in.name,

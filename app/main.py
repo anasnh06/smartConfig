@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from app.api.v1.endpoints import users, auth, roles, os, environments, projects, servers, configurations, templates, template_configurations, server_templates, server_configurations, execution_groups, executions, execution_runners
-from websockets import execution as execution_ws
+from app.websockets import execution as execution_ws
 from app.core.config import settings
 from fastapi.middleware.cors import CORSMiddleware
 

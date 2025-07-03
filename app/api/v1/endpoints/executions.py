@@ -6,6 +6,7 @@ from app.schemas import (
     ExecutionUpdate,
     ExecutionPublic,
     ExecutionInDB,
+    ExecutionShort,  # ajouté
 )
 from app.dependencies import get_current_user, get_execution_service
 from app.services import ExecutionService
@@ -38,6 +39,17 @@ def list_executions(
     📄 Liste paginée des exécutions globales.
     """
     return service.list_all(skip=skip, limit=limit)
+
+
+@router.get("/short", response_model=List[ExecutionShort], status_code=status.HTTP_200_OK)
+def list_executions_short(
+    service: ExecutionService = Depends(get_execution_service),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    📋 Liste simplifiée des exécutions (id + titre + statut, pour dropdowns).
+    """
+    return service.list_short()
 
 
 @router.get("/{execution_id}", response_model=ExecutionPublic, status_code=status.HTTP_200_OK)

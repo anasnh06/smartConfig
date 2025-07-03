@@ -14,6 +14,12 @@ class ExecutionGroupShort(BaseModel):
     id: int
     name: Optional[str] = None
     status: Optional[str] = None
+    started_at: Optional[datetime] = None
+    finished_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    created_by_user: Optional["UserShort"] = None
+    updated_by_user: Optional["UserShort"] = None
 
 
     class Config:
@@ -27,11 +33,22 @@ class ExecutionGroupBase(BaseModel):
 
 class ExecutionGroupCreate(ExecutionGroupBase):
     execution_id: int
+    playbook_path: Optional[str] = None
+    inventory_path: Optional[str] = None
+    started_at: Optional[datetime] = None
+    finished_at: Optional[datetime] = None
+    
 
 
 class ExecutionGroupUpdate(BaseModel):
     name: Optional[str] = None
     status: Optional[str] = None
+    execution_id: Optional[int] = None  # ✅ rendu optionnel pour replay/move
+    playbook_path: Optional[str] = None
+    inventory_path: Optional[str] = None
+    started_at: Optional[datetime] = None
+    finished_at: Optional[datetime] = None
+    
 
 
 class ExecutionGroupInDB(ExecutionGroupBase):
@@ -63,7 +80,7 @@ class ExecutionGroupPublic(BaseModel):
     updated_at: Optional[datetime] = None
     created_by_user: Optional["UserShort"] = None
     updated_by_user: Optional["UserShort"] = None
-
+    
     execution: "ExecutionShort"
     server_configurations: list["ServerConfigurationShortForExecution"] = []
 

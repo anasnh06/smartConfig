@@ -563,3 +563,75 @@ class ExecutionRunnerService:
         )
 
         return execution
+
+    async def create_and_launch_execution(
+        self,
+        title: Optional[str],
+        groups_data: list[dict[str, Any]],
+        created_by: Optional[int],
+    ) -> Execution:
+        """
+        Crée une exécution complète (Execution, Groups, ServerConfigurations, ServerTemplates) et la lance immédiatement (async).
+        Chaque élément de groups_data = {
+            "name": str | None,
+            "servers": List[Server],
+            "elements": List[dict],  # Chaque élément = {type, id?, command?, name?, description?, order?}
+        }
+        """
+        execution = self.create_execution(title=title, created_by=created_by)
+
+        configs = self.db.query(Configuration).all()
+        templates = self.db.query(Template).all()
+        template_confs = self.db.query(TemplateConfiguration).all()
+
+        all_server_template_map = {}
+
+        for group_data in groups_data:
+            servers = group_data["servers"]
+            elements = group_data["elements"]
+
+            group = self.create_group(
+                execution=execution,
+                name=group_data.get("name"),
+                servers=servers,
+                elements=elements,
+                configs=configs,
+                templates=templates,
+                template_confs=template_confs,
+                created_by=created_by,
+            )
+
+            server_template_map = {}
+
+            # On crée les ServerTemplate si nécessaires
+            for server in servers:
+                for el in elements:
+                    if el["type"] == "template":
+                        key = (server.id, el["id"])
+                        if key not in all_server_template_map:
+                            st = self.create_server_template(
+                                server_id=server.id,
+                                template_id=el["id"],
+                                created_by=created_by
+                            )
+                            server_template_map[key] = st.id
+                            all_server_template_map[key] = st.id
+                        else:
+                            server_template_map[key] = all_server_template_map[key]
+
+            self.create_server_configurations(
+                group=group,
+                servers=servers,
+                elements=elements,
+                created_by=created_by,
+                server_template_map=server_template_map
+            )
+
+        self.db.commit()
+
+        # Lancement immédiat
+        await self.launch_execution(execution.id)
+        return execution
+
+
+

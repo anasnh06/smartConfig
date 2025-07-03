@@ -9,7 +9,6 @@ class ServerTemplate(Base):
 
     # Champs simples
     id = Column(Integer, primary_key=True)
-    context = Column(String(255), nullable=True)
     status = Column(String(20), default="pending")          # pending / running / success / failed / partial
 
     # Foreign Keys métier
@@ -22,8 +21,7 @@ class ServerTemplate(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
 
-    replayed_from_id = Column(Integer, ForeignKey("server_templates.id"), nullable=True)
-    replayed_from = relationship("ServerTemplate", remote_side=[id])
+    
 
     # Relations utilisateur
     created_by_user = relationship(

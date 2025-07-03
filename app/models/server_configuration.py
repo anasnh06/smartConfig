@@ -43,6 +43,5 @@ class ServerConfiguration(Base):
     created_by_user = relationship("User", foreign_keys=[created_by], back_populates="servers_configurations_created")
     updated_by_user = relationship("User", foreign_keys=[updated_by], back_populates="servers_configurations_updated")
 
-    replayed_from_id = Column(Integer, ForeignKey("server_configurations.id"), nullable=True)
-    replayed_from = relationship("ServerConfiguration", remote_side=[id])
+    
 

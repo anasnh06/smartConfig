@@ -6,6 +6,7 @@ from app.schemas import (
     UserUpdate, 
     UserPublic, 
     UserInDB,
+    UserShort,  # ajouté
 )
 from app.dependencies import get_user_service, get_current_user
 from app.models import User
@@ -42,6 +43,17 @@ def list_users(
     📄 Liste paginée des utilisateurs.
     """
     return user_service.list_all(skip=skip, limit=limit)
+
+
+@router.get("/short", response_model=List[UserShort], status_code=status.HTTP_200_OK)
+def list_users_short(
+    user_service: UserService = Depends(get_user_service),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    📋 Liste simplifiée des utilisateurs (id + username, pour dropdowns).
+    """
+    return user_service.list_short()
 
 
 @router.get("/{user_id}", response_model=UserPublic, status_code=status.HTTP_200_OK)

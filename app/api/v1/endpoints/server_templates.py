@@ -6,6 +6,7 @@ from app.schemas import (
     ServerTemplateUpdate,
     ServerTemplatePublic,
     ServerTemplateInDB,
+    ServerTemplateShort,  # ajouté
 )
 from app.dependencies import get_server_template_service, get_current_user
 from app.services import ServerTemplateService
@@ -38,6 +39,17 @@ def list_server_templates(
     📄 Liste paginée des associations Server <-> Template.
     """
     return service.list_all(skip=skip, limit=limit)
+
+
+@router.get("/short", response_model=List[ServerTemplateShort], status_code=status.HTTP_200_OK)
+def list_server_templates_short(
+    service: ServerTemplateService = Depends(get_server_template_service),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    📋 Liste simplifiée des liaisons serveur-template (id + status + template, pour dropdowns).
+    """
+    return service.list_short()
 
 
 @router.get("/{attachment_id}", response_model=ServerTemplatePublic, status_code=status.HTTP_200_OK)

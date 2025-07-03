@@ -35,6 +35,12 @@ class ExecutionService:
             .all()
         )
 
+    def list_short(self) -> List[Execution]:
+        """
+        📋 Liste brute de toutes les exécutions (sans relations).
+        """
+        return self.db.query(Execution).all()
+
     def create(self, execution_in: ExecutionCreate, created_by_id: Optional[int] = None) -> Execution:
         execution = Execution(
             title=execution_in.title,

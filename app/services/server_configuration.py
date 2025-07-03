@@ -41,6 +41,12 @@ class ServerConfigurationService:
             .all()
         )
 
+    def list_short(self) -> List[ServerConfiguration]:
+        """
+        📋 Liste brute de toutes les liaisons serveur-configuration (sans relations).
+        """
+        return self.db.query(ServerConfiguration).all()
+
     def create(self, sc_in: ServerConfigurationCreate, created_by_id: Optional[int] = None) -> ServerConfiguration:
         sc = ServerConfiguration(
             server_id=sc_in.server_id,

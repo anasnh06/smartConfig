@@ -40,6 +40,12 @@ class UserService:
             .all()
         )
 
+    def list_short(self) -> List[User]:
+        """
+        📋 Liste brute de tous les utilisateurs (sans relations).
+        """
+        return self.db.query(User).all()
+
     def create(self, user_in: UserCreate, created_by_id: Optional[int] = None) -> User:
         user = User(
             username=user_in.username,
