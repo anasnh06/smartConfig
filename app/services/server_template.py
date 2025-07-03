@@ -49,7 +49,6 @@ class ServerTemplateService:
         st = ServerTemplate(
             server_id=st_in.server_id,
             template_id=st_in.template_id,
-            context=st_in.context,
             status= st_in.status,
             created_by=created_by_id
         )

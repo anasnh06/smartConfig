@@ -57,7 +57,9 @@ class ServerConfigurationService:
             source=sc_in.source,
             status=sc_in.status or "pending",
             return_code=sc_in.return_code,
-            output=sc_in.output,
+            stdout=sc_in.stdout,
+            stderr=sc_in.stderr,
+            log_path=sc_in.log_path,
             started_at=sc_in.started_at,
             finished_at=sc_in.finished_at,
             created_by=created_by_id
