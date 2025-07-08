@@ -8,14 +8,14 @@ from fastapi.responses import JSONResponse
 router = APIRouter()
 
 # ✅ Lancer une exécution (asynchrone, pas via Celery)
-@router.post("/launch/async/{execution_id}", status_code=status.HTTP_202_ACCEPTED)
-async def launch_execution_async(
-    execution_id: int,
-    service: ExecutionRunnerService = Depends(get_execution_runner_service),
-    current_user: User = Depends(get_current_user),
-):
-    await service.launch_execution(execution_id)
-    return {"message": f"Exécution {execution_id} lancée (async)."}
+# @router.post("/launch/async/{execution_id}", status_code=status.HTTP_202_ACCEPTED)
+# async def launch_execution_async(
+#     execution_id: int,
+#     service: ExecutionRunnerService = Depends(get_execution_runner_service),
+#     current_user: User = Depends(get_current_user),
+# ):
+#     await service.launch_execution(execution_id)
+#     return {"message": f"Exécution {execution_id} lancée (async)."}
 
 
 # ✅ Lancer une exécution via Celery
@@ -31,14 +31,14 @@ def launch_execution_celery(
 
 
 # ✅ Lancer un groupe (asynchrone, pas via Celery)
-@router.post("/launch/group/async/{group_id}", status_code=status.HTTP_202_ACCEPTED)
-async def launch_group_async(
-    group_id: int,
-    service: ExecutionRunnerService = Depends(get_execution_runner_service),
-    current_user: User = Depends(get_current_user),
-):
-    await service.launch_group(group_id)
-    return {"message": f"Groupe {group_id} lancé (async)."}
+# @router.post("/launch/group/async/{group_id}", status_code=status.HTTP_202_ACCEPTED)
+# async def launch_group_async(
+#     group_id: int,
+#     service: ExecutionRunnerService = Depends(get_execution_runner_service),
+#     current_user: User = Depends(get_current_user),
+# ):
+#     await service.launch_group(group_id)
+#     return {"message": f"Groupe {group_id} lancé (async)."}
 
 
 # ✅ Lancer un groupe via Celery
@@ -54,55 +54,55 @@ def launch_group_celery(
 
 
 # ✅ Replay : exécution complète
-@router.post("/replay/execution/{execution_id}", status_code=status.HTTP_201_CREATED)
-def replay_execution(
-    execution_id: int,
-    service: ExecutionRunnerService = Depends(get_execution_runner_service),
-    current_user: User = Depends(get_current_user),
-):
-    execution = service.replay_execution(execution_id, created_by=current_user.id)
-    from app.tasks.execution import launch_execution_task
-    launch_execution_task.delay(execution.id)
-    return execution
+# @router.post("/replay/execution/{execution_id}", status_code=status.HTTP_201_CREATED)
+# def replay_execution(
+#     execution_id: int,
+#     service: ExecutionRunnerService = Depends(get_execution_runner_service),
+#     current_user: User = Depends(get_current_user),
+# ):
+#     execution = service.replay_execution(execution_id, created_by=current_user.id)
+#     from app.tasks.execution import launch_execution_task
+#     launch_execution_task.delay(execution.id)
+#     return execution
 
 
 # ✅ Replay : un groupe
-@router.post("/replay/group/{group_id}", status_code=status.HTTP_201_CREATED)
-def replay_group(
-    group_id: int,
-    service: ExecutionRunnerService = Depends(get_execution_runner_service),
-    current_user: User = Depends(get_current_user),
-):
-    execution = service.replay_group(group_id, created_by=current_user.id)
-    from app.tasks.execution import launch_execution_task
-    launch_execution_task.delay(execution.id)
-    return execution
+# @router.post("/replay/group/{group_id}", status_code=status.HTTP_201_CREATED)
+# def replay_group(
+#     group_id: int,
+#     service: ExecutionRunnerService = Depends(get_execution_runner_service),
+#     current_user: User = Depends(get_current_user),
+# ):
+#     execution = service.replay_group(group_id, created_by=current_user.id)
+#     from app.tasks.execution import launch_execution_task
+#     launch_execution_task.delay(execution.id)
+#     return execution
 
 
 # ✅ Replay : un ServerTemplate
-@router.post("/replay/server_template/{st_id}", status_code=status.HTTP_201_CREATED)
-def replay_server_template(
-    st_id: int,
-    service: ExecutionRunnerService = Depends(get_execution_runner_service),
-    current_user: User = Depends(get_current_user),
-):
-    execution = service.replay_server_template(st_id, created_by=current_user.id)
-    from app.tasks.execution import launch_execution_task
-    launch_execution_task.delay(execution.id)
-    return execution
+# @router.post("/replay/server_template/{st_id}", status_code=status.HTTP_201_CREATED)
+# def replay_server_template(
+#     st_id: int,
+#     service: ExecutionRunnerService = Depends(get_execution_runner_service),
+#     current_user: User = Depends(get_current_user),
+# ):
+#     execution = service.replay_server_template(st_id, created_by=current_user.id)
+#     from app.tasks.execution import launch_execution_task
+#     launch_execution_task.delay(execution.id)
+#     return execution
 
 
 # ✅ Replay : un ServerConfiguration
-@router.post("/replay/server_configuration/{sc_id}", status_code=status.HTTP_201_CREATED)
-def replay_server_configuration(
-    sc_id: int,
-    service: ExecutionRunnerService = Depends(get_execution_runner_service),
-    current_user: User = Depends(get_current_user),
-):
-    execution = service.replay_server_configuration(sc_id, created_by=current_user.id)
-    from app.tasks.execution import launch_execution_task
-    launch_execution_task.delay(execution.id)
-    return execution
+# @router.post("/replay/server_configuration/{sc_id}", status_code=status.HTTP_201_CREATED)
+# def replay_server_configuration(
+#     sc_id: int,
+#     service: ExecutionRunnerService = Depends(get_execution_runner_service),
+#     current_user: User = Depends(get_current_user),
+# ):
+#     execution = service.replay_server_configuration(sc_id, created_by=current_user.id)
+#     from app.tasks.execution import launch_execution_task
+#     launch_execution_task.delay(execution.id)
+#     return execution
 
 
 # ✅ Obtenir le statut agrégé d'une exécution (optionnel)
