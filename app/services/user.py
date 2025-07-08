@@ -39,7 +39,7 @@ class UserService:
             .limit(limit)
             .all()
         )
-
+    # aaaaa
     def list_short(self) -> List[User]:
         """
         📋 Liste brute de tous les utilisateurs (sans relations).
