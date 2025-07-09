@@ -14,3 +14,5 @@ celery_app.conf.result_serializer = "json"
 
 # Optionnel : timezone pour logs/cohérence
 celery_app.conf.timezone = "UTC"
+
+

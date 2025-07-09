@@ -5,36 +5,36 @@ from app.models.configuration import Configuration
 from app.models.template import Template
 from app.models.template_configuration import TemplateConfiguration
 
-# === 1. Données factices ===
+# === 1️⃣ Données factices ===
 
 config1 = Configuration(id=1, name="Install Nginx", command="apt install nginx -y", description="Installer nginx")
-config2 = Configuration(id=2, name="Start Nginx", command="systemctl start nginx", description="Demarrer nginx")
-config3 = Configuration(id=3, name="Echo", command="echo Hello", description="afficher hello")
+config2 = Configuration(id=2, name="Start Nginx", command="systemctl start nginx", description="Démarrer nginx")
+config3 = Configuration(id=3, name="Echo Hello", command="echo Hello", description=None)
 
 template1 = Template(id=1, name="Web Template")
 
-tc1 = TemplateConfiguration(template_id=1, configuration_id=1, order=2, comment="installer proprement")
-tc2 = TemplateConfiguration(template_id=1, configuration_id=2, order=3, comment="demarrer le service")
+tc1 = TemplateConfiguration(template_id=1, configuration_id=1, order=2, comment="Installer proprement")
+tc2 = TemplateConfiguration(template_id=1, configuration_id=2, order=3, comment="Démarrer le service")
 
-# === 2. Scénario mixte ===
+# === 2️⃣ Scénario mixte ===
 
 elements = [
     {"type": "manual", "command": "uptime", "name": "Uptime Check", "order": 1, "description": "Afficher uptime"},
-    {"type": "configuration", "id": 3, "order": 2},  # config sans description
+    {"type": "configuration", "id": 3, "order": 2},
     {"type": "template", "id": 1, "order": 3},
-    {"type": "manual", "command": "df -h", "order": 1},  # manuel sans name ni description
+    {"type": "manual", "command": "df -h", "order": 4},
 ]
 
-# === 3. Identifiants de test ===
+# === 3️⃣ Identifiants de test ===
 
 execution_id = 1
 group_id = 1
 
-# === 4. Création des dossiers ===
+# === 4️⃣ Création des dossiers nécessaires ===
 
 ensure_group_dirs_exist(execution_id, group_id)
 
-# === 5. Génération du fichier playbook ===
+# === 5️⃣ Génération du fichier playbook ===
 
 playbook_path = get_playbook_path(execution_id, group_id)
 
@@ -44,8 +44,13 @@ generate_playbook(
     templates=[template1],
     template_confs=[tc1, tc2],
     playbook_path=playbook_path,
-    group_name=None,
+    group_name="Test Group",
     group_id=group_id
 )
 
 print(f"✅ Playbook généré ici : {playbook_path.resolve()}")
+
+# === 6️⃣ Affichage direct du contenu pour vérification ===
+
+print("\n=== Contenu du playbook généré ===\n")
+print(playbook_path.read_text(encoding="utf-8"))

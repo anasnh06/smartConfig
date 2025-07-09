@@ -49,3 +49,14 @@ def ensure_group_dirs_exist(execution_id: int, group_id: int) -> None:
     dossier groupe, logs, etc.
     """
     get_log_dir(execution_id, group_id).mkdir(parents=True, exist_ok=True)
+
+
+def get_group_log_path(execution_id: int, group_id: int) -> Path:
+    """
+    Retourne le chemin du fichier log global du groupe.
+    Exemple : .../group_7/group.log
+    """
+    return get_group_dir(execution_id, group_id) / "group.log"
+
+
+

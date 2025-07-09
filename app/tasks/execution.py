@@ -2,7 +2,7 @@ import logging
 import asyncio
 from sqlalchemy.exc import SQLAlchemyError
 
-from tasks.celery_app import celery_app
+from app.tasks.celery_app import celery_app
 from app.services.execution_runner import ExecutionRunnerService
 from app.db import get_db
 
@@ -20,7 +20,8 @@ def run_execution_task(self, execution_id: int):
     """
     Tâche Celery pour lancer une exécution complète via ExecutionRunnerService.
     """
-    db = get_db()
+    db_generator = get_db()
+    db = next(db_generator)
     try:
         logger.info(f"[CELERY] ▶️ Lancement exécution ID={execution_id}")
         runner = ExecutionRunnerService(db)
@@ -47,7 +48,8 @@ def run_group_task(self, group_id: int):
     """
     Tâche Celery pour lancer un groupe d'exécution unique via ExecutionRunnerService.
     """
-    db = get_db()
+    db_generator = get_db()
+    db = next(db_generator)
     try:
         logger.info(f"[CELERY] ▶️ Lancement groupe ID={group_id}")
         runner = ExecutionRunnerService(db)

@@ -1,0 +1,16 @@
+- hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Test JSON callback
+      shell: uptime
+      register: result_1
+
+    - debug:
+        var: result_1
+
+    - name: Test deuxième commande
+      shell: date
+      register: result_2
+
+    - debug:
+        var: result_2
