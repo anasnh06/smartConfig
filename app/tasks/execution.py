@@ -1,7 +1,6 @@
 import logging
 import asyncio
 from sqlalchemy.exc import SQLAlchemyError
-
 from app.tasks.celery_app import celery_app
 from app.services.execution_runner import ExecutionRunnerService
 from app.db import get_db
@@ -25,14 +24,19 @@ def run_execution_task(self, execution_id: int):
     try:
         logger.info(f"[CELERY] ▶️ Lancement exécution ID={execution_id}")
         runner = ExecutionRunnerService(db)
-        asyncio.run(runner.launch_execution(execution_id))
+
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(runner.launch_execution(execution_id))
+        loop.close()
+
         logger.info(f"[CELERY] ✅ Terminé exécution ID={execution_id}")
     except SQLAlchemyError as db_error:
         logger.error(f"[CELERY] ❌ Erreur SQL exécution ID={execution_id} : {db_error}")
         raise
     except Exception as e:
         logger.error(f"[CELERY] ❌ Erreur inattendue exécution ID={execution_id} : {e}")
-        raise
+        raise self.retry(exc=e)
     finally:
         db.close()
 
@@ -53,13 +57,18 @@ def run_group_task(self, group_id: int):
     try:
         logger.info(f"[CELERY] ▶️ Lancement groupe ID={group_id}")
         runner = ExecutionRunnerService(db)
-        asyncio.run(runner.launch_group(group_id))
+
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(runner.launch_group(group_id))
+        loop.close()
+
         logger.info(f"[CELERY] ✅ Terminé groupe ID={group_id}")
     except SQLAlchemyError as db_error:
         logger.error(f"[CELERY] ❌ Erreur SQL groupe ID={group_id} : {db_error}")
         raise
     except Exception as e:
         logger.error(f"[CELERY] ❌ Erreur inattendue groupe ID={group_id} : {e}")
-        raise
+        raise self.retry(exc=e)
     finally:
         db.close()

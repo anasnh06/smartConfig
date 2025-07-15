@@ -1,14 +1,16 @@
 from __future__ import annotations
+import json
 import os
 from typing import Optional, Any
-
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from pathlib import Path
 import asyncio
-import subprocess
-from app.websockets.manager import manager
+import logging
+from redis.asyncio import Redis
+from app.core.redis import get_redis_client
 
+from app.websockets.manager import manager
 from app.models import (
     Execution, ExecutionGroup, ServerTemplate, ServerConfiguration,
     Server, Configuration, Template, TemplateConfiguration
@@ -19,48 +21,34 @@ from app.ansible_runner.paths import (
     get_inventory_path, get_playbook_path,
     ensure_group_dirs_exist, get_log_dir, get_group_log_path
 )
-import logging
-
 
 logger = logging.getLogger(__name__)
 
 class ExecutionRunnerService:
     def __init__(self, db: Session):
         self.db = db
+        self.redis: Optional[Redis] = None
 
-    def create_execution(
-        self,
-        title: Optional[str],
-        created_by: Optional[int],
-    ) -> Execution:
-        """
-        Crée une exécution avec titre et traçabilité.
-        """
-        execution = Execution(
-            title=title,
-            created_by=created_by,
-        )
+    async def ensure_redis(self):
+        if self.redis is None:
+            from app.core.redis import get_redis_client
+            self.redis = get_redis_client()
+
+    async def notify(self, execution_id: int, payload: dict):
+        await self.ensure_redis()
+        await self.redis.publish(f"execution:{execution_id}", json.dumps(payload))
+        logger.info(f"[REDIS] 📤 Publié sur execution:{execution_id} → {payload}")
+        await manager.broadcast_json(execution_id, payload)
+
+    def create_execution(self, title: Optional[str], created_by: Optional[int]) -> Execution:
+        execution = Execution(title=title, created_by=created_by)
         self.db.add(execution)
         self.db.commit()
         self.db.refresh(execution)
         logger.info(f"[Execution] ➕ Créée : ID={execution.id}")
         return execution
 
-
-    def create_group(
-        self,
-        execution: Execution,
-        name: Optional[str],
-        servers: list[Server],
-        elements: list[dict[str, Any]],
-        configs: list[Configuration],
-        templates: list[Template],
-        template_confs: list[TemplateConfiguration],
-        created_by: Optional[int],
-    ) -> ExecutionGroup:
-        """
-        Crée un groupe avec inventaire et playbook générés proprement.
-        """
+    def create_group(self, execution: Execution, name: Optional[str], servers: list[Server], elements: list[dict[str, Any]], configs: list[Configuration], templates: list[Template], template_confs: list[TemplateConfiguration], created_by: Optional[int]) -> ExecutionGroup:
         group = ExecutionGroup(
             execution_id=execution.id,
             name=name or f"group_{len(execution.execution_groups) + 1}",
@@ -85,46 +73,18 @@ class ExecutionRunnerService:
         logger.info(f"[ExecutionGroup] ➕ Créé : ID={group.id} pour Execution={execution.id}")
         return group
 
-
-    def create_server_template(
-        self,
-        server_id: int,
-        template_id: int,
-        created_by: Optional[int],
-    ) -> ServerTemplate:
-        """
-        Crée et trace un ServerTemplate (server-template).
-        """
-        st = ServerTemplate(
-            server_id=server_id,
-            template_id=template_id,
-            created_by=created_by,
-        )
+    def create_server_template(self, server_id: int, template_id: int, created_by: Optional[int]) -> ServerTemplate:
+        st = ServerTemplate(server_id=server_id, template_id=template_id, created_by=created_by)
         self.db.add(st)
         self.db.commit()
         self.db.refresh(st)
         logger.info(f"[ServerTemplate] ➕ Server={server_id} → Template={template_id} (ID={st.id})")
         return st
 
-
-    def create_server_configurations(
-        self,
-        group: ExecutionGroup,
-        servers: list[Server],
-        elements: list[dict[str, Any]],
-        created_by: Optional[int],
-        server_template_map: Optional[dict[tuple[int, int], int]] = None
-    ) -> list[ServerConfiguration]:
-        """
-        Crée tous les ServerConfigurations du groupe avec granularité par configuration,
-        même lors d'exécution via Template.
-        """
+    def create_server_configurations(self, group: ExecutionGroup, servers: list[Server], elements: list[dict[str, Any]], created_by: Optional[int], server_template_map: Optional[dict[tuple[int, int], int]] = None) -> list[ServerConfiguration]:
         server_confs: list[ServerConfiguration] = []
-
-        # Construction map rapide Template → [TemplateConfiguration]
         template_conf_map: dict[int, list[TemplateConfiguration]] = {}
-        template_confs = self.db.query(TemplateConfiguration).all()
-        for tc in template_confs:
+        for tc in self.db.query(TemplateConfiguration).all():
             template_conf_map.setdefault(tc.template_id, []).append(tc)
 
         for server in servers:
@@ -141,12 +101,6 @@ class ExecutionRunnerService:
                         source="configuration",
                         configuration_id=el_id
                     )
-                    self.db.add(sc)
-                    server_confs.append(sc)
-                    logger.info(
-                        f"[ServerConfig] ➕ Conf directe : SC_ID={sc.id} | Server={server.id} | Conf={el_id}"
-                    )
-
                 elif el_type == "manual":
                     sc = ServerConfiguration(
                         server_id=server.id,
@@ -156,20 +110,8 @@ class ExecutionRunnerService:
                         source="manual",
                         custom_command=element.get("command", "").strip()
                     )
-                    self.db.add(sc)
-                    server_confs.append(sc)
-                    logger.info(
-                        f"[ServerConfig] ➕ Manual : SC_ID={sc.id} | Server={server.id}"
-                    )
-
                 elif el_type == "template":
-                    # Récupération server_template_id pour trace
-                    st_id = None
-                    if server_template_map:
-                        key = (server.id, el_id)
-                        st_id = server_template_map.get(key)
-
-                    # Créer un SC par configuration dans le template
+                    st_id = server_template_map.get((server.id, el_id)) if server_template_map else None
                     for tc in sorted(template_conf_map.get(el_id, []), key=lambda c: (c.order is None, c.order)):
                         sc = ServerConfiguration(
                             server_id=server.id,
@@ -182,26 +124,18 @@ class ExecutionRunnerService:
                         )
                         self.db.add(sc)
                         server_confs.append(sc)
-                        logger.info(
-                            f"[ServerConfig] ➕ Template : SC_ID={sc.id} | Server={server.id} | "
-                            f"Template={el_id} | Conf={tc.configuration_id} | ST_ID={st_id}"
-                        )
+                        continue
+                    continue
+                else:
+                    continue
+                self.db.add(sc)
+                server_confs.append(sc)
 
         self.db.commit()
         logger.info(f"[ServerConfigurations] ➕ {len(server_confs)} créés pour Group={group.id}")
         return server_confs
 
-
-
-
     async def launch_group(self, group_id: int) -> None:
-        """
-        Exécute le playbook unique du groupe en utilisant le callback JSON,
-        parse le résultat JSON, met à jour la DB pour chaque SC,
-        génère un log individuel SC, et envoie les WS de suivi.
-        """
-        import json
-
         group = self.db.query(ExecutionGroup).filter_by(id=group_id).first()
         if not group:
             logger.error(f"[ExecutionGroup] ❌ Introuvable : ID={group_id}")
@@ -209,152 +143,113 @@ class ExecutionRunnerService:
 
         execution = group.execution
         group.status = "running"
-        group.started_at = datetime.utcnow()
+        group.started_at = datetime.now(timezone.utc)
         self.db.commit()
+        logger.info(f"[ExecutionGroup] ▶️ Lancement : ID={group.id}")
 
         playbook_path = Path(group.playbook_path)
         inventory_path = Path(group.inventory_path)
         group_log_path = get_group_log_path(execution.id, group.id)
 
-        cmd = [
-            "ansible-playbook",
-            str(playbook_path),
-            "-i", str(inventory_path),
-            "-e", "ansible_python_interpreter=/usr/bin/python3"
-        ]
-
+        cmd = ["ansible-playbook", str(playbook_path), "-i", str(inventory_path), "-e", "ansible_python_interpreter=/usr/bin/python3"]
         env = os.environ.copy()
         env["ANSIBLE_STDOUT_CALLBACK"] = "json"
 
-        # Exécution en récupérant le JSON complet
-        process = await asyncio.create_subprocess_exec(
-            *cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.STDOUT,
-            env=env,
-            text=True
-        )
-        stdout, _ = await process.communicate()
+        process = await asyncio.create_subprocess_exec(*cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT, env=env)
+        stdout_bytes, _ = await process.communicate()
+        stdout = stdout_bytes.decode()
 
-        # Sauvegarde le log global
         group_log_path.write_text(stdout, encoding="utf-8")
+        # Ajout : notification du stdout du groupe via WebSocket
+        await self.notify(execution.id, {
+            "event": "group_stdout",
+            "group_id": group.id,
+            "stdout": stdout,
+        })
 
-        try:
-            result_json = json.loads(stdout)
-        except json.JSONDecodeError as e:
-            logger.exception(f"[ExecutionGroup] ❌ JSON decode failed: {e}")
+        if process.returncode != 0:
             group.status = "failed"
-            group.finished_at = datetime.utcnow()
+            group.finished_at = datetime.now(timezone.utc)
             self.db.commit()
             return
 
-        sc_list_sorted = sorted(group.server_configurations, key=lambda sc: sc.id)
+        try:
+            result_json = json.loads(stdout)
+        except json.JSONDecodeError:
+            group.status = "failed"
+            group.finished_at = datetime.now(timezone.utc)
+            self.db.commit()
+            return
+
+        sc_list = sorted(group.server_configurations, key=lambda sc: sc.id)
         result_counter = 0
 
         for play in result_json.get("plays", []):
             for task in play.get("tasks", []):
-                for host, host_result in task.get("hosts", {}).items():
-                    # Nous récupérons uniquement les résultats shell/debug contenant stdout/rc
-                    if "stdout" in host_result and "rc" in host_result:
-                        if result_counter >= len(sc_list_sorted):
-                            logger.warning(f"[ExecutionGroup] Résultat en trop, SC manquant. Ignoré.")
-                            continue
+                for host_result in task.get("hosts", {}).values():
+                    if result_counter >= len(sc_list):
+                        continue
+                    sc = sc_list[result_counter]
+                    sc.return_code = host_result.get("rc")
+                    sc.stdout = host_result.get("stdout", "")
+                    sc.stderr = host_result.get("stderr", "")
+                    sc.status = "success" if sc.return_code == 0 else "failed"
+                    sc.started_at = group.started_at
+                    sc.finished_at = datetime.now(timezone.utc)
 
-                        sc = sc_list_sorted[result_counter]
-                        sc.return_code = host_result.get("rc")
-                        sc.stdout = host_result.get("stdout", "")
-                        sc.stderr = host_result.get("stderr", "")
-                        sc.status = "success" if sc.return_code == 0 else "failed"
-                        sc.finished_at = datetime.utcnow()
+                    log_dir = get_log_dir(execution.id, group.id)
+                    log_file = log_dir / f"server_{sc.server_id}_sc_{sc.id}.log"
+                    log_file.write_text(
+                        f"=== STDOUT ===\n{sc.stdout}\n=== STDERR ===\n{sc.stderr}\n=== RC ===\n{sc.return_code}\n",
+                        encoding="utf-8"
+                    )
+                    sc.log_path = str(log_file)
+                    self.db.commit()
 
-                        # Créer le log individuel SC
-                        log_dir = get_log_dir(execution.id, group.id)
-                        log_file = log_dir / f"server_{sc.server_id}_sc_{sc.id}.log"
-                        log_content = (
-                            f"Server ID: {sc.server_id}\n"
-                            f"Configuration ID: {sc.configuration_id or 'N/A'}\n"
-                            f"ServerConfiguration ID: {sc.id}\n"
-                            f"=== STDOUT ===\n{sc.stdout}\n"
-                            f"=== STDERR ===\n{sc.stderr}\n"
-                            f"=== RC ===\n{sc.return_code}\n"
-                        )
-                        log_file.write_text(log_content, encoding="utf-8")
-                        sc.log_path = str(log_file)
+                    await self.notify(execution.id, {
+                        "event": "server_config_update",
+                        "group_id": group.id,
+                        "server_config_id": sc.id,
+                        "server_id": sc.server.id,
+                        "status": sc.status,
+                        "return_code": sc.return_code,
+                        "finished_at": sc.finished_at.isoformat(),
+                    })
+                    result_counter += 1
 
-                        self.db.commit()
-
-                        await manager.broadcast_json(execution.id, {
-                            "event": "server_config_update",
-                            "group_id": group.id,
-                            "group_name": group.name,
-                            "server_config_id": sc.id,
-                            "server_id": sc.server.id,
-                            "server_name": sc.server.name,
-                            "status": sc.status,
-                            "return_code": sc.return_code,
-                            "source": sc.source,
-                            "configuration_id": sc.configuration_id,
-                            "server_template_id": sc.server_template_id,
-                            "custom_command": sc.custom_command,
-                            "started_at": sc.started_at.isoformat() if sc.started_at else None,
-                            "finished_at": sc.finished_at.isoformat() if sc.finished_at else None,
-                        })
-
-                        result_counter += 1
-
-        group.finished_at = datetime.utcnow()
+        group.finished_at = datetime.now(timezone.utc)
         self.update_group_status(group.id)
         self.update_server_template_statuses(group)
         self.update_execution_status(execution.id)
 
-        await manager.broadcast_json(execution.id, {
+        await self.notify(execution.id, {
             "event": "group_finished",
             "group_id": group.id,
-            "group_name": group.name,
             "status": group.status,
         })
 
-        logger.info(f"[ExecutionGroup] ✅ Terminé : ID={group.id} → {group.status}")
-
-
-
-
     async def launch_execution(self, execution_id: int) -> None:
-        """
-        Lance tous les groupes d'une exécution séquentiellement.
-        """
         execution = self.db.query(Execution).filter_by(id=execution_id).first()
         if not execution:
-            logger.error(f"[Execution] ❌ Introuvable : ID={execution_id}")
             return
 
         execution.status = "running"
-        execution.started_at = datetime.utcnow()
+        execution.started_at = datetime.now(timezone.utc)
         self.db.commit()
-
-        logger.info(f"[Execution] ▶️ Lancement Execution ID={execution.id}")
 
         for group in execution.execution_groups:
             await self.launch_group(group.id)
 
-        # Final WS update
         self.update_execution_status(execution.id)
-        await manager.broadcast_json(execution.id, {
+        await self.notify(execution.id, {
             "event": "execution_status_update",
             "execution_id": execution.id,
             "status": execution.status,
         })
 
-        logger.info(f"[Execution] ✅ Tous les groupes terminés pour Execution ID={execution.id} → {execution.status}")
-
-
     def update_group_status(self, group_id: int) -> None:
-        """
-        Met à jour le statut du groupe selon les ServerConfigurations associées.
-        """
         group = self.db.query(ExecutionGroup).filter_by(id=group_id).first()
         if not group:
-            logger.error(f"[Group] ❌ Inexistant : ID={group_id}")
             return
 
         statuses = [sc.status for sc in group.server_configurations if sc.status]
@@ -376,16 +271,9 @@ class ExecutionRunnerService:
         group.finished_at = max((sc.finished_at for sc in group.server_configurations if sc.finished_at), default=None)
         self.db.commit()
 
-        logger.info(f"[Group] 🔁 ID={group.id} Statut mis à jour → {group.status}")
-
-
     def update_execution_status(self, execution_id: int) -> None:
-        """
-        Met à jour le statut de l'exécution en fonction de ses groupes associés.
-        """
         execution = self.db.query(Execution).filter_by(id=execution_id).first()
         if not execution:
-            logger.error(f"[Execution] ❌ Inexistant : ID={execution_id}")
             return
 
         statuses = [g.status for g in execution.execution_groups if g.status]
@@ -407,14 +295,7 @@ class ExecutionRunnerService:
         execution.finished_at = max((g.finished_at for g in execution.execution_groups if g.finished_at), default=None)
         self.db.commit()
 
-        logger.info(f"[Execution] 🔁 ID={execution.id} Statut mis à jour → {execution.status}")
-
-
     def update_server_template_statuses(self, group: ExecutionGroup) -> None:
-        """
-        Met à jour le statut de chaque ServerTemplate lié aux ServerConfigurations du groupe.
-        """
-        # Mapping ServerTemplate ID → ServerConfigurations associées
         template_map: dict[int, list[ServerConfiguration]] = {}
         for sc in group.server_configurations:
             if sc.server_template_id:
@@ -423,7 +304,6 @@ class ExecutionRunnerService:
         for st_id, scs in template_map.items():
             st = self.db.query(ServerTemplate).filter_by(id=st_id).first()
             if not st:
-                logger.warning(f"[ServerTemplate] ⚠️ Introuvable : ID={st_id}")
                 continue
 
             statuses = [sc.status for sc in scs if sc.status]
@@ -442,32 +322,16 @@ class ExecutionRunnerService:
                 st.status = "partial"
 
             self.db.commit()
-            logger.info(f"[ServerTemplate] 🔁 Statut mis à jour : ID={st.id} → {st.status}")
 
-
-
-    async def create_and_launch_execution(
-        self,
-        title: Optional[str],
-        groups_data: list[dict[str, Any]],
-        created_by: Optional[int],
-    ) -> Execution:
-        """
-        Crée une exécution complète avec ses groupes, server_configurations et server_templates,
-        puis lance chaque groupe via Celery en parallèle.
-        """
-        # 1️⃣ Création de l'exécution
+    async def create_and_launch_execution(self, title: Optional[str], groups_data: list[dict[str, Any]], created_by: Optional[int]) -> Execution:
         execution = self.create_execution(title=title, created_by=created_by)
 
-        # 2️⃣ Préchargement des données nécessaires
         configs = self.db.query(Configuration).all()
         templates = self.db.query(Template).all()
         template_confs = self.db.query(TemplateConfiguration).all()
 
-        # Pour éviter duplications ServerTemplate
         all_server_template_map: dict[tuple[int, int], int] = {}
 
-        # 3️⃣ Création des groupes, server_templates et server_configurations
         for group_data in groups_data:
             server_ids = [s["id"] for s in group_data["servers"]]
             servers = self.db.query(Server).filter(Server.id.in_(server_ids)).all()
@@ -509,23 +373,20 @@ class ExecutionRunnerService:
                 server_template_map=server_template_map,
             )
 
-        # 4️⃣ Marquer l'exécution comme "running"
         execution.status = "running"
-        execution.started_at = datetime.utcnow()
+        execution.started_at = datetime.now(timezone.utc)
         self.db.commit()
 
-        # 5️⃣ Dispatch Celery par groupe
         from app.tasks.execution import run_group_task
-
         for group in execution.execution_groups:
             run_group_task.delay(group.id)
             logger.info(f"[Execution] 🚀 Dispatch Celery: Group ID={group.id} dans Execution ID={execution.id}")
 
         logger.info(f"[Execution] ✅ Créée et lancée via Celery : Execution ID={execution.id}")
-
+        # Ajout : notification WebSocket du démarrage de l'exécution
+        await self.notify(execution.id, {
+            "event": "execution_status_update",
+            "execution_id": execution.id,
+            "status": execution.status,
+        })
         return execution
-
-
-
-
-    

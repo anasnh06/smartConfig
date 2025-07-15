@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     secret_key: str                # à mettre dans .env
     algorithm: str = "HS256"
     access_token_expire_minutes: int = Field(..., env="ACCESS_TOKEN_EXPIRE_MINUTES")
+    redis_url: str = Field(default="redis://localhost:6379/0", env="REDIS_URL")
 
     class Config:
         env_file = ".env"

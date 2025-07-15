@@ -6,15 +6,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
 class WebSocketManager:
-    """
-    Gère toutes les connexions WebSocket groupées par execution_id.
-    Permet de diffuser en temps réel tous les événements liés à une exécution (groupes, serveurs, statut global...).
-    """
-
     def __init__(self):
-        # Dictionnaire des connexions actives par execution_id
         self.connections: Dict[int, Set[WebSocket]] = {}
         self.lock = Lock()
 
@@ -35,9 +28,6 @@ class WebSocketManager:
         logger.info(f"❌ WebSocket déconnecté : execution_id={execution_id}")
 
     async def broadcast_json(self, execution_id: int, message: dict):
-        """
-        Envoie un message JSON à tous les clients connectés à une execution_id donnée.
-        """
         async with self.lock:
             clients = self.connections.get(execution_id, set()).copy()
 
@@ -53,10 +43,9 @@ class WebSocketManager:
                 logger.warning(f"⚠️ WebSocket envoi échoué → suppression : {e}")
                 disconnected.add(ws)
 
-        # Nettoyage
         async with self.lock:
             for ws in disconnected:
                 self.connections[execution_id].discard(ws)
 
-# Instance globale à importer
+# Instance globale
 manager = WebSocketManager()

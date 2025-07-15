@@ -1,11 +1,12 @@
 from celery import Celery
+from app.core import settings
 
 # Création de l'application Celery avec un nom unique
 celery_app = Celery("smartconfig_execution")
 
 # Configuration de base (le broker Redis doit être lancé sur ce port/local)
-celery_app.conf.broker_url = "redis://localhost:6379/0"
-celery_app.conf.result_backend = "redis://localhost:6379/0"
+celery_app.conf.broker_url = settings.redis_url
+celery_app.conf.result_backend = settings.redis_url
 
 # Acceptation uniquement des contenus JSON
 celery_app.conf.accept_content = ["json"]

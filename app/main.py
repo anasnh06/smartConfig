@@ -1,12 +1,33 @@
 from fastapi import FastAPI
-from app.api.v1.endpoints import users, auth, roles, os, environments, projects, servers, configurations, templates, template_configurations, server_templates, server_configurations, execution_groups, executions, execution_runners
+from contextlib import asynccontextmanager
+import logging
+
+from app.websockets.subscriber import subscribe_to_redis
+from app.api.v1.endpoints import (
+    users, auth, roles, os, environments, projects,
+    servers, configurations, templates, template_configurations,
+    server_templates, server_configurations, execution_groups,
+    executions, execution_runners
+)
 from app.websockets import execution as execution_ws
 from app.core.config import settings
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title=settings.app_name, debug=True)
+logging.basicConfig(level=logging.INFO)
 
-# Include routers
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    try:
+        await subscribe_to_redis()
+        logging.info("✅ Redis subscriber connecté avec succès.")
+    except Exception as e:
+        logging.error(f"❌ Erreur de connexion à Redis : {e}")
+    yield
+    # Ajoute ici un cleanup si tu veux
+
+app = FastAPI(title=settings.app_name, debug=True, lifespan=lifespan)
+
+# Routes
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Auth"])
 app.include_router(users.router, prefix="/api/v1/users", tags=["Users"])
 app.include_router(roles.router, prefix="/api/v1/roles", tags=["Roles"])
@@ -23,13 +44,12 @@ app.include_router(execution_groups.router, prefix="/api/v1/execution-groups", t
 app.include_router(executions.router, prefix="/api/v1/executions", tags=["Executions"])
 app.include_router(execution_runners.router, prefix="/api/v1/execution-runners", tags=["Execution Runner"])
 app.include_router(execution_ws.router, prefix="/ws", tags=["Websockets"])
-    
 
+# CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # 👈 Ajoute aussi ton domaine Vercel en prod
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
