@@ -8,7 +8,6 @@ from pathlib import Path
 import asyncio
 import logging
 from redis.asyncio import Redis
-from app.core.redis import get_redis_client
 
 from app.websockets.manager import manager
 from app.models import (
@@ -151,16 +150,25 @@ class ExecutionRunnerService:
         inventory_path = Path(group.inventory_path)
         group_log_path = get_group_log_path(execution.id, group.id)
 
-        cmd = ["ansible-playbook", str(playbook_path), "-i", str(inventory_path), "-e", "ansible_python_interpreter=/usr/bin/python3"]
+        cmd = [
+            "ansible-playbook",
+            str(playbook_path),
+            "-i", str(inventory_path),
+            "-e", "ansible_python_interpreter=/usr/bin/python3"
+        ]
         env = os.environ.copy()
         env["ANSIBLE_STDOUT_CALLBACK"] = "json"
 
-        process = await asyncio.create_subprocess_exec(*cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT, env=env)
+        process = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
+            env=env
+        )
         stdout_bytes, _ = await process.communicate()
         stdout = stdout_bytes.decode()
 
         group_log_path.write_text(stdout, encoding="utf-8")
-        # Ajout : notification du stdout du groupe via WebSocket
         await self.notify(execution.id, {
             "event": "group_stdout",
             "group_id": group.id,
@@ -181,18 +189,66 @@ class ExecutionRunnerService:
             self.db.commit()
             return
 
-        sc_list = sorted(group.server_configurations, key=lambda sc: sc.id)
-        result_counter = 0
+        from collections import defaultdict
 
+        # Construction du mapping des ServerConfiguration
+        sc_map = defaultdict(list)
+        for sc in group.server_configurations:
+            if sc.source == "manual":
+                key = (sc.server_id, sc.custom_command.strip())
+            elif sc.source in {"configuration", "template"}:
+                key = (sc.server_id, sc.configuration_id)
+            else:
+                continue
+            sc_map[key].append(sc)
+
+        # Construction du mapping host Ansible → server (par IP ou name)
+        servers = self.db.query(Server).all()
+        host_server_map = {}
+        for server in servers:
+            host_server_map[server.name] = server
+            host_server_map[server.ip_address] = server
+            host_server_map[f"server_{server.id}"] = server
+
+        # Boucle sur les résultats Ansible
         for play in result_json.get("plays", []):
             for task in play.get("tasks", []):
-                for host_result in task.get("hosts", {}).values():
-                    if result_counter >= len(sc_list):
+                task_name = task.get("task", {}).get("name", "")
+                for host, result in task.get("hosts", {}).items():
+                    server = host_server_map.get(host)
+                    if not server:
+                        logger.warning(f"[ExecutionRunner] ⚠️ Host '{host}' introuvable dans la DB (mapping name/IP).")
                         continue
-                    sc = sc_list[result_counter]
-                    sc.return_code = host_result.get("rc")
-                    sc.stdout = host_result.get("stdout", "")
-                    sc.stderr = host_result.get("stderr", "")
+
+                    key = None
+                    if "[manual]" in task_name:
+                        command = result.get("cmd") or result.get("invocation", {}).get("module_args", {}).get("_raw_params", "")
+                        key = (server.id, command.strip())
+                    elif "[configuration:" in task_name:
+                        try:
+                            config_id = int(task_name.split("[configuration:")[1].split("]")[0])
+                            key = (server.id, config_id)
+                        except:
+                            continue
+                    elif "[template:" in task_name:
+                        try:
+                            config_id = int(task_name.split("[template:")[1].split("]")[0])
+                            key = (server.id, config_id)
+                        except:
+                            continue
+                    else:
+                        continue
+
+                    matched_scs = sc_map.get(key)
+                    if not matched_scs:
+                        logger.warning(f"[ExecutionRunner] ⚠️ Aucun ServerConfiguration trouvé pour clé={key}")
+                        continue
+
+                    sc = matched_scs.pop(0)
+
+                    sc.return_code = result.get("rc")
+                    sc.stdout = result.get("stdout", "")
+                    sc.stderr = result.get("stderr", "")
                     sc.status = "success" if sc.return_code == 0 else "failed"
                     sc.started_at = group.started_at
                     sc.finished_at = datetime.now(timezone.utc)
@@ -215,7 +271,6 @@ class ExecutionRunnerService:
                         "return_code": sc.return_code,
                         "finished_at": sc.finished_at.isoformat(),
                     })
-                    result_counter += 1
 
         group.finished_at = datetime.now(timezone.utc)
         self.update_group_status(group.id)
@@ -227,6 +282,7 @@ class ExecutionRunnerService:
             "group_id": group.id,
             "status": group.status,
         })
+
 
     async def launch_execution(self, execution_id: int) -> None:
         execution = self.db.query(Execution).filter_by(id=execution_id).first()
