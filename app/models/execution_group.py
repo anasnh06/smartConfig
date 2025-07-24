@@ -12,6 +12,7 @@ class ExecutionGroup(Base):
     status         = Column(String(20), default="pending")       # pending / running / success / failed
     playbook_path  = Column(String(255), nullable=True)          # rempli au launch
     inventory_path = Column(String(255), nullable=True)
+    log_path = Column(String(255), nullable=True)   # tous pour ansible en utilisant paths 
     started_at     = Column(DateTime(timezone=True))
     finished_at    = Column(DateTime(timezone=True))
 

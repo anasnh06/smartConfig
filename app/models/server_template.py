@@ -10,6 +10,8 @@ class ServerTemplate(Base):
     # Champs simples
     id = Column(Integer, primary_key=True)
     status = Column(String(20), default="pending")          # pending / running / success / failed / partial
+    started_at     = Column(DateTime(timezone=True))
+    finished_at    = Column(DateTime(timezone=True))
 
     # Foreign Keys métier
     server_id = Column(Integer, ForeignKey("servers.id", ondelete="CASCADE"), nullable=False)

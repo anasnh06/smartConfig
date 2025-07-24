@@ -1,8 +1,15 @@
+import socket
 from typing import Optional, List
+from fastapi import HTTPException
 from sqlalchemy.orm import Session, joinedload
 
 from app.models import Server, Role
 from app.schemas import ServerCreate, ServerUpdate
+import paramiko
+import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ServerService:
@@ -108,3 +115,29 @@ class ServerService:
         self.db.delete(server)
         self.db.commit()
         return True
+    
+    def check_ssh_status(self, server_id: int) -> str:
+        # Récupère le serveur par ID
+        server = self.get_by_id(server_id)
+        if not server:
+            raise HTTPException(status_code=404, detail="Server not found")
+
+        # Résoudre le chemin du fichier SSH
+        private_key_path = os.path.expanduser(server.ssh_private_key_path)
+
+        # Vérifie si le fichier existe
+        if not os.path.exists(private_key_path):
+            logger.error(f"Clé privée introuvable : {private_key_path}")
+            return "offline"
+
+        ssh_client = paramiko.SSHClient()
+        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+        try:
+            ssh_client.connect(server.ip_address, username=server.ssh_user, key_filename=private_key_path, timeout=5)
+            return "online"
+        except Exception as e:
+            logger.error(f"Erreur de connexion SSH pour {server.name}: {e}")
+            return "offline"
+        finally:
+            ssh_client.close()

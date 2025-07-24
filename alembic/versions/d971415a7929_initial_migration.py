@@ -1,8 +1,8 @@
-"""full initial schema
+"""Initial migration
 
-Revision ID: 4a64b65461d5
+Revision ID: d971415a7929
 Revises: 
-Create Date: 2025-07-10 10:52:53.172181
+Create Date: 2025-07-18 18:25:19.335356
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '4a64b65461d5'
+revision: str = 'd971415a7929'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -129,6 +129,7 @@ def upgrade() -> None:
     sa.Column('status', sa.String(length=20), nullable=True),
     sa.Column('playbook_path', sa.String(length=255), nullable=True),
     sa.Column('inventory_path', sa.String(length=255), nullable=True),
+    sa.Column('log_path', sa.String(length=255), nullable=True),
     sa.Column('started_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('finished_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=False),
@@ -186,6 +187,8 @@ def upgrade() -> None:
     op.create_table('server_templates',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('status', sa.String(length=20), nullable=True),
+    sa.Column('started_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('finished_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('server_id', sa.Integer(), nullable=False),
     sa.Column('template_id', sa.Integer(), nullable=False),
     sa.Column('created_by', sa.Integer(), nullable=True),

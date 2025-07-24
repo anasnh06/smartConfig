@@ -100,3 +100,15 @@ def delete_server(
     if not server_service.delete(server_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Serveur introuvable.")
     return
+
+@router.get("/{server_id}/ssh-status", status_code=status.HTTP_200_OK)
+def get_ssh_status(
+    server_id: int,
+    server_service: ServerService = Depends(get_server_service),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Vérifie si un serveur est en ligne via SSH.
+    """
+    status = server_service.check_ssh_status(server_id)
+    return {"status": status}
